@@ -1,4 +1,4 @@
-schroff
+./schroff
 
 # Eagle .brd board files and .b## backup files
 *.b*
