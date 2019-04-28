@@ -51,7 +51,7 @@ func (e *Eagle) WriteFile(filename string) error {
 	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer file.Close()
 	header := "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 	header += "<!DOCTYPE eagle SYSTEM \"eagle.dtd\">\n"
