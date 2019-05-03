@@ -22,7 +22,7 @@ file.
 Demonstration usage, creating a 6hp Pulplogic tile:
 
 ```
-$ ./panelgen -format=pulplogic -reference-board=ref.brd -output=mytile.brd -width=6
+$ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd -width=6
 ```
 
 
