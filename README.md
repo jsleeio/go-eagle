@@ -4,7 +4,27 @@
 
 This repository contains code and tools for interacting with Autodesk Eagle files.
 
-At present, the only tool included is `schroff`.
+At present, the below tools are included:
+
+* `panelgen`: create a new blank panel board file in Eurorack, Pulplogic 1U or
+  Intellijel 1U formats, at a specified width
+* `schroff`: derive a new Eurorack panel board file from the board file for
+  your circuit
+
+
+## panelgen
+
+`panelgen` is used for creating new, blank panels in Eurorack, Pulplogic 1U or
+Intellijel 1U formats. An existing Eagle board file is required in order to
+derive the desired set of Eagle layer information. This can be any Eagle board
+file.
+
+Demonstration usage, creating a 6hp Pulplogic tile:
+
+```
+$ ./panelgen -format=pulplogic -reference-board=ref.brd -output=mytile.brd -width=6
+```
+
 
 ## schroff
 
