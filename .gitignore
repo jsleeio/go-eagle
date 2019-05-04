@@ -1,4 +1,5 @@
-./schroff
+/schroff
+/panelgen
 
 # Eagle .brd board files and .b## backup files
 *.b*
