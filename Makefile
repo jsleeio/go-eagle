@@ -5,3 +5,6 @@ schroff:
 
 panelgen:
 	go build ./cmd/panelgen
+
+clean:
+	rm schroff panelgen
