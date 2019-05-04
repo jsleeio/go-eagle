@@ -31,7 +31,6 @@ import (
 	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
 	"github.com/jsleeio/go-eagle/pkg/panel"
 
-	// "github.com/jsleeio/go-eagle/internal/boardops"
 	"github.com/jsleeio/go-eagle/internal/boardops/standard"
 )
 
