@@ -30,6 +30,9 @@ import (
 	"github.com/jsleeio/go-eagle/pkg/format/intellijel"
 	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
 	"github.com/jsleeio/go-eagle/pkg/panel"
+
+	// "github.com/jsleeio/go-eagle/internal/boardops"
+	"github.com/jsleeio/go-eagle/internal/boardops/standard"
 )
 
 const (
@@ -66,15 +69,6 @@ func configureFromFlags() (*config, error) {
 	return c, nil
 }
 
-func boardOutline(x1, y1, x2, y2 float64, layer int) []eagle.Wire {
-	return []eagle.Wire{
-		{X1: x1, Y1: y1, X2: x2, Y2: y1, Layer: layer, Width: 0}, // bottom
-		{X1: x1, Y1: y2, X2: x2, Y2: y2, Layer: layer, Width: 0}, // top
-		{X1: x1, Y1: y1, X2: x1, Y2: y2, Layer: layer, Width: 0}, // left
-		{X1: x2, Y1: y1, X2: x2, Y2: y2, Layer: layer, Width: 0}, // right
-	}
-}
-
 func generatePanelBoardFile(cfg *config, spec panel.Panel) error {
 	// the user very likely already has an Eagle board file nearby, so use it to
 	// acquire a list of layers --- avoids hardcoding them, lets users use their
@@ -84,78 +78,13 @@ func generatePanelBoardFile(cfg *config, spec panel.Panel) error {
 		return fmt.Errorf("can't load reference board: %v", err)
 	}
 	panel := ref.CloneEmpty()
-	if err := applyBoardOperations(cfg, panel, spec, standardPanelOperations()); err != nil {
+	if err := standard.ApplyStandardBoardOperations(panel, spec); err != nil {
 		return fmt.Errorf("error creating panel features: %v", err)
 	}
 	if err := panel.WriteFile(*cfg.Output); err != nil {
 		return fmt.Errorf("can't write output board: %v", err)
 	}
 	return nil
-}
-
-type boardOperation func(*config, *eagle.Eagle, panel.Panel) error
-
-func applyBoardOperations(cfg *config, board *eagle.Eagle, spec panel.Panel, ops []boardOperation) error {
-	for _, op := range ops {
-		if err := op(cfg, board, spec); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func outlineWiresOp(cfg *config, board *eagle.Eagle, spec panel.Panel) error {
-	adjust := spec.HorizontalFit() / 2 // half on left edge, half on right edge
-	outline := boardOutline(
-		0+adjust,
-		0,
-		spec.Width()-adjust,
-		spec.Height(),
-		board.LayerByName(*cfg.OutlineLayer),
-	)
-	for _, wire := range outline {
-		board.Board.Plain.Wires = append(board.Board.Plain.Wires, wire)
-	}
-	return nil
-}
-
-func mountingHolesOp(cfg *config, board *eagle.Eagle, spec panel.Panel) error {
-	for _, hole := range spec.MountingHoles() {
-		board.Board.Plain.Holes = append(board.Board.Plain.Holes, eagle.Hole{
-			X:     hole.X,
-			Y:     hole.Y,
-			Drill: spec.MountingHoleDiameter(),
-		})
-	}
-	return nil
-}
-
-func copperFillOp(cfg *config, board *eagle.Eagle, spec panel.Panel) error {
-	top := eagle.Rectangle{
-		X1:    *cfg.CopperPullback,
-		Y1:    *cfg.CopperPullback,
-		X2:    spec.Width() - *cfg.CopperPullback,
-		Y2:    spec.Height() - *cfg.CopperPullback,
-		Layer: board.LayerByName("Top"),
-	}
-	bottom := eagle.Rectangle{
-		X1:    *cfg.CopperPullback,
-		Y1:    *cfg.CopperPullback,
-		X2:    spec.Width() - *cfg.CopperPullback,
-		Y2:    spec.Height() - *cfg.CopperPullback,
-		Layer: board.LayerByName("Bottom"),
-	}
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, top)
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, bottom)
-	return nil
-}
-
-func standardPanelOperations() []boardOperation {
-	return []boardOperation{
-		outlineWiresOp,
-		mountingHolesOp,
-		copperFillOp,
-	}
 }
 
 func main() {
