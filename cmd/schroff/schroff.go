@@ -24,10 +24,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"path/filepath"
 	"strconv"
 
+	"github.com/jsleeio/go-eagle/internal/outline"
 	"github.com/jsleeio/go-eagle/pkg/eagle"
 )
 
@@ -36,67 +36,6 @@ func printElements(e *eagle.Eagle) {
 		fmt.Printf("%s is a %s::%s at (%v,%v)\n",
 			elem.Name, elem.Library, elem.Package, elem.X, elem.Y)
 	}
-}
-
-func fsort2(a, b float64) (float64, float64) {
-	if a > b {
-		return b, a
-	}
-	return a, b
-}
-
-// findBoardOutlineWires searches through Wires in the Plain section of
-// the board for zero-width wires in the Dimension layer
-func findBoardOutlineWires(e *eagle.Eagle) []eagle.Wire {
-	wires := []eagle.Wire{}
-	dimension := e.LayerByName("Dimension")
-	for _, wire := range e.Board.Plain.Wires {
-		if wire.Layer == dimension && wire.Width == 0.0 {
-			wires = append(wires, wire)
-		}
-	}
-	return wires
-}
-
-// BoardCoords holds information about a board outline and its place in
-// the coordinate space. This is used to determine panel width and to
-// correctly align the board with the panel
-type BoardCoords struct {
-	XMin, XMax, YMin, YMax float64
-	XOffset, YOffset       float64
-	HP                     int
-}
-
-// Width returns the width of the board outline
-func (bc BoardCoords) Width() float64 {
-	return bc.XMax - bc.XMin
-}
-
-// Height returns the height of the board outline
-func (bc BoardCoords) Height() float64 {
-	return bc.YMax - bc.YMin
-}
-
-// DeriveBoardCoords creates a BoardCoords object from the discovered outline
-// wires in the Plain section of a board
-func DeriveBoardCoords(e *eagle.Eagle) BoardCoords {
-	bc := BoardCoords{}
-	for _, wire := range findBoardOutlineWires(e) {
-		txmin, txmax := fsort2(wire.X1, wire.X2)
-		tymin, tymax := fsort2(wire.Y1, wire.Y2)
-		bc.XMin = math.Min(bc.XMin, txmin)
-		bc.XMax = math.Max(bc.XMax, txmax)
-		bc.YMin = math.Min(bc.YMin, tymin)
-		bc.YMax = math.Max(bc.YMax, tymax)
-	}
-	if bc.XMin != 0 {
-		bc.XOffset = -bc.XMin
-	}
-	if bc.YMin != 0 {
-		bc.YOffset = -bc.YMin
-	}
-	bc.HP = int(math.Ceil(math.Ceil(bc.XMax-bc.XMin) / 5.08))
-	return bc
 }
 
 func schroffSystemHoles(hp int) []eagle.Hole {
@@ -122,8 +61,8 @@ func wireRectangle(x1, y1, x2, y2 float64, layer int) []eagle.Wire {
 	}
 }
 
-func schroffPanelForBoard(board *eagle.Eagle, cfg config) (*eagle.Eagle, BoardCoords) {
-	bc := DeriveBoardCoords(board)
+func schroffPanelForBoard(board *eagle.Eagle, cfg config) (*eagle.Eagle, outline.BoardCoords) {
+	bc := outline.DeriveBoardCoords(board)
 	panel := board.CloneEmpty()
 	// http://www.doepfer.de/a100_man/a100m_e.htm
 	// Doepfer spec does includes a table of some width corrections
