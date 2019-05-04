@@ -11,6 +11,16 @@ At present, the below tools are included:
 * `schroff`: derive a new Eurorack panel board file from the board file for
   your circuit
 
+## installing
+
+On a Mac with Homebrew, you can use my Homebrew tap to install the `panelgen`
+and `schroff` commands:
+
+```
+brew tap jsleeio/apps
+brew install go-eagle
+```
+
 
 ## panelgen
 
