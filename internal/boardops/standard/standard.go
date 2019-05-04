@@ -42,6 +42,7 @@ func ApplyStandardBoardOperations(board *eagle.Eagle, spec panel.Panel) error {
 		outlineWiresOp,
 		mountingHolesOp,
 		copperFillOp,
+		railKeepoutsOp,
 	}
 	return boardops.ApplyBoardOperations(board, spec, ops)
 }
@@ -70,6 +71,27 @@ func mountingHolesOp(board *eagle.Eagle, spec panel.Panel) error {
 			Drill: spec.MountingHoleDiameter(),
 		})
 	}
+	return nil
+}
+
+func railKeepoutsOp(board *eagle.Eagle, spec panel.Panel) error {
+	layer := board.LayerByName("tKeepout")
+	bRail := eagle.Rectangle{
+		X1:    panel.LeftX(spec),
+		Y1:    spec.MountingHoleBottomY(),
+		X2:    panel.RightX(spec),
+		Y2:    spec.MountingHoleBottomY() + spec.RailHeightFromMountingHole(),
+		Layer: layer,
+	}
+	tRail := eagle.Rectangle{
+		X1:    panel.LeftX(spec),
+		Y1:    spec.MountingHoleTopY() - spec.RailHeightFromMountingHole(),
+		X2:    panel.RightX(spec),
+		Y2:    spec.MountingHoleTopY(),
+		Layer: layer,
+	}
+	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, bRail)
+	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, tRail)
 	return nil
 }
 
