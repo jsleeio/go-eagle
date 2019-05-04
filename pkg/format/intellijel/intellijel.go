@@ -50,6 +50,9 @@ const (
 
 	// HP represents horizontal pitch in a Eurorack frame, in millimetres
 	HP = eurorack.HP
+
+	// HorizontalFit indicates the panel tolerance adjustment for the format
+	HorizontalFit = 0.25
 )
 
 // Intellijel implements the panel.Panel interface and encapsulates the physical
@@ -90,4 +93,9 @@ func (e Intellijel) MountingHoles() []panel.Point {
 		{X: rhsx, Y: MountingHoleTopY1U},
 	}
 	return holes
+}
+
+// HorizontalFit indicates the panel tolerance adjustment for the format
+func (e Intellijel) HorizontalFit() float64 {
+	return HorizontalFit
 }

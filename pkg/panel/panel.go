@@ -26,9 +26,31 @@ type Point struct {
 }
 
 // Panel types encapsulate physical characteristics of a rail-mounted panel
+// All coordinates, distances and sizes are indicated in millimetres
 type Panel interface {
+	// MountingHoles returns a list of Points indicating mounting hole locations
 	MountingHoles() []Point
+
+	// MountingHoleDiameter returns the appropriate mounting hole diameter for
+	// the panel format
 	MountingHoleDiameter() float64
+
+	// Height returns the Y-dimension size for the panel, eg. 128.5mm for panels
+	// in the Eurorack system. This does NOT include tolerance adjustments
 	Height() float64
+
+	// Height returns the X-dimension size for the panel. This does not include
+	// tolerance adjustments
 	Width() float64
+
+	// HorizontalFit returns the panel tolerance amount in the horizontal axis.
+	// When creating panel outlines, this tolerance amount should be added to
+	// the left-edge X coordinate, and subtracted from the right-edge coordinate,
+	// resulting in the panel being slightly narrower than the "correct" width.
+	//
+	// As this is intended to improve panel fit in a system with panels of varying
+	// tolerances, this adjustment should only be applied to the left and right
+	// edges of the outline, and NOT to the X coordinates of any other features
+	// of the panel. (and especially not the mounting holes!)
+	HorizontalFit() float64
 }

@@ -105,8 +105,15 @@ func applyBoardOperations(cfg *config, board *eagle.Eagle, spec panel.Panel, ops
 }
 
 func outlineWiresOp(cfg *config, board *eagle.Eagle, spec panel.Panel) error {
-	dimlayer := board.LayerByName(*cfg.OutlineLayer)
-	for _, wire := range boardOutline(0, 0, spec.Width(), spec.Height(), dimlayer) {
+	adjust := spec.HorizontalFit() / 2 // half on left edge, half on right edge
+	outline := boardOutline(
+		0+adjust,
+		0,
+		spec.Width()-adjust,
+		spec.Height(),
+		board.LayerByName(*cfg.OutlineLayer),
+	)
+	for _, wire := range outline {
 		board.Board.Plain.Wires = append(board.Board.Plain.Wires, wire)
 	}
 	return nil

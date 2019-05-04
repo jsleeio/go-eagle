@@ -55,6 +55,9 @@ const (
 
 	// HP represents horizontal pitch in a Eurorack frame, in millimetres
 	HP = 5.08
+
+	// HorizontalFit indicates the panel tolerance adjustment for the format
+	HorizontalFit = 0.25
 )
 
 // Pulplogic implements the panel.Panel interface and encapsulates the physical
@@ -94,4 +97,9 @@ func (e Pulplogic) MountingHoles() []panel.Point {
 		{X: e.Width() - MountingHolesRightOffset, Y: MountingHoleTopY1U},
 	}
 	return holes
+}
+
+// HorizontalFit indicates the panel tolerance adjustment for the format
+func (e Pulplogic) HorizontalFit() float64 {
+	return HorizontalFit
 }

@@ -52,6 +52,9 @@ const (
 
 	// HP represents horizontal pitch in a Eurorack frame, in millimetres
 	HP = 5.08
+
+	// HorizontalFit indicates the panel tolerance adjustment for the format
+	HorizontalFit = 0.25
 )
 
 // Eurorack implements the panel.Panel interface and encapsulates the physical
@@ -94,4 +97,9 @@ func (e Eurorack) MountingHoles() []panel.Point {
 		holes = append(holes, panel.Point{X: rhsx, Y: MountingHoleTopY3U})
 	}
 	return holes
+}
+
+// HorizontalFit indicates the panel tolerance adjustment for the format
+func (e Eurorack) HorizontalFit() float64 {
+	return HorizontalFit
 }
