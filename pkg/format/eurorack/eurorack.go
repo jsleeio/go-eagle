@@ -55,6 +55,11 @@ const (
 
 	// HorizontalFit indicates the panel tolerance adjustment for the format
 	HorizontalFit = 0.25
+
+	// RailHeightFromMountingHole is used to determine how much space exists.
+	// See discussion in github.com/jsleeio/pkg/panel. 5mm is a good safe
+	// figure for all known-used Eurorack rail types
+	RailHeightFromMountingHole = 5.0
 )
 
 // Eurorack implements the panel.Panel interface and encapsulates the physical
@@ -102,4 +107,21 @@ func (e Eurorack) MountingHoles() []panel.Point {
 // HorizontalFit indicates the panel tolerance adjustment for the format
 func (e Eurorack) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// RailHeightFromMountingHole is used to calculate space between rails
+func (e Eurorack) RailHeightFromMountingHole() float64 {
+	return RailHeightFromMountingHole
+}
+
+// MountingHoleTopY returns the Y coordinate for the top row of mounting
+// holes
+func (e Eurorack) MountingHoleTopY() float64 {
+	return MountingHoleTopY3U
+}
+
+// MountingHoleBottomY returns the Y coordinate for the bottom row of
+// mounting holes
+func (e Eurorack) MountingHoleBottomY() float64 {
+	return MountingHoleBottomY3U
 }

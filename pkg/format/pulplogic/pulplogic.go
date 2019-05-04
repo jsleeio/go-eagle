@@ -21,6 +21,7 @@
 package pulplogic
 
 import (
+	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
 	"github.com/jsleeio/go-eagle/pkg/panel"
 )
 
@@ -54,10 +55,19 @@ const (
 	MountingHoleDiameter = 0.125 * inch
 
 	// HP represents horizontal pitch in a Eurorack frame, in millimetres
-	HP = 5.08
+	HP = eurorack.HP
 
 	// HorizontalFit indicates the panel tolerance adjustment for the format
-	HorizontalFit = 0.25
+	HorizontalFit = eurorack.HorizontalFit
+
+	// RailHeightFromMountingHole is used to determine how much space exists.
+	// See discussion in github.com/jsleeio/pkg/panel.
+	//
+	// NOT using the Eurorack figure here; see the Pulplogic spec. Instead we use
+	// half the height of Vector T-strut rails. With this measurement, the
+	// Pulplogic-recommended maximum PCB size (1.130") will fit between a pair of
+	// keepout areas extending this distance beyond the mounting hole centres.
+	RailHeightFromMountingHole = (0.291 / 2.0) * inch
 )
 
 // Pulplogic implements the panel.Panel interface and encapsulates the physical
@@ -72,34 +82,51 @@ func NewPulplogic(hp int) *Pulplogic {
 }
 
 // Width returns the width of a Pulplogic panel, in millimetres
-func (e Pulplogic) Width() float64 {
-	return HP * float64(e.HP)
+func (p Pulplogic) Width() float64 {
+	return HP * float64(p.HP)
 }
 
 // Height returns the height of a Pulplogic panel, in millimetres
-func (e Pulplogic) Height() float64 {
+func (p Pulplogic) Height() float64 {
 	return PanelHeight1U
 }
 
-// MountingHoleDiameter returns the Pulplogic system mounting hole size, in
+// MountingHoleDiameter returns thp Pulplogic system mounting hole size, in
 // millimetres
-func (e Pulplogic) MountingHoleDiameter() float64 {
+func (p Pulplogic) MountingHoleDiameter() float64 {
 	return MountingHoleDiameter
 }
 
 // MountingHoles generates a set of Point objects representing the mounting
 // hole locations of a Pulplogic panel
-func (e Pulplogic) MountingHoles() []panel.Point {
+func (p Pulplogic) MountingHoles() []panel.Point {
 	holes := []panel.Point{
 		{X: MountingHolesLeftOffset, Y: MountingHoleBottomY1U},
 		{X: MountingHolesLeftOffset, Y: MountingHoleTopY1U},
-		{X: e.Width() - MountingHolesRightOffset, Y: MountingHoleBottomY1U},
-		{X: e.Width() - MountingHolesRightOffset, Y: MountingHoleTopY1U},
+		{X: p.Width() - MountingHolesRightOffset, Y: MountingHoleBottomY1U},
+		{X: p.Width() - MountingHolesRightOffset, Y: MountingHoleTopY1U},
 	}
 	return holes
 }
 
 // HorizontalFit indicates the panel tolerance adjustment for the format
-func (e Pulplogic) HorizontalFit() float64 {
+func (p Pulplogic) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// RailHeightFromMountingHole is used to calculate space between rails
+func (p Pulplogic) RailHeightFromMountingHole() float64 {
+	return RailHeightFromMountingHole
+}
+
+// MountingHoleTopY returns the Y coordinate for the top row of mounting
+// holes
+func (p Pulplogic) MountingHoleTopY() float64 {
+	return MountingHoleTopY1U
+}
+
+// MountingHoleBottomY returns the Y coordinate for the bottom row of
+// mounting holes
+func (p Pulplogic) MountingHoleBottomY() float64 {
+	return MountingHoleBottomY1U
 }

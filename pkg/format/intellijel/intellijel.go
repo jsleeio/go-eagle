@@ -53,6 +53,11 @@ const (
 
 	// HorizontalFit indicates the panel tolerance adjustment for the format
 	HorizontalFit = 0.25
+
+	// RailHeightFromMountingHole is used to determine how much space exists.
+	// See discussion in github.com/jsleeio/pkg/panel. 5mm is a good safe
+	// figure for all known-used Eurorack rail types
+	RailHeightFromMountingHole = eurorack.RailHeightFromMountingHole
 )
 
 // Intellijel implements the panel.Panel interface and encapsulates the physical
@@ -67,25 +72,25 @@ func NewIntellijel(hp int) *Intellijel {
 }
 
 // Width returns the width of a Intellijel panel, in millimetres
-func (e Intellijel) Width() float64 {
-	return HP * float64(e.HP)
+func (i Intellijel) Width() float64 {
+	return HP * float64(i.HP)
 }
 
 // Height returns the height of a Intellijel panel, in millimetres
-func (e Intellijel) Height() float64 {
+func (i Intellijel) Height() float64 {
 	return PanelHeight1U
 }
 
 // MountingHoleDiameter returns the Intellijel system mounting hole size, in
 // millimetres
-func (e Intellijel) MountingHoleDiameter() float64 {
+func (i Intellijel) MountingHoleDiameter() float64 {
 	return MountingHoleDiameter
 }
 
 // MountingHoles generates a set of Point objects representing the mounting
 // hole locations of a Intellijel panel
-func (e Intellijel) MountingHoles() []panel.Point {
-	rhsx := MountingHolesLeftOffset + HP*(float64(e.HP-3))
+func (i Intellijel) MountingHoles() []panel.Point {
+	rhsx := MountingHolesLeftOffset + HP*(float64(i.HP-3))
 	holes := []panel.Point{
 		{X: MountingHolesLeftOffset, Y: MountingHoleBottomY1U},
 		{X: MountingHolesLeftOffset, Y: MountingHoleTopY1U},
@@ -96,6 +101,23 @@ func (e Intellijel) MountingHoles() []panel.Point {
 }
 
 // HorizontalFit indicates the panel tolerance adjustment for the format
-func (e Intellijel) HorizontalFit() float64 {
+func (i Intellijel) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// RailHeightFromMountingHole is used to calculate space between rails
+func (i Intellijel) RailHeightFromMountingHole() float64 {
+	return RailHeightFromMountingHole
+}
+
+// MountingHoleTopY returns the Y coordinate for the top row of mounting
+// holes
+func (i Intellijel) MountingHoleTopY() float64 {
+	return MountingHoleTopY1U
+}
+
+// MountingHoleBottomY returns the Y coordinate for the bottom row of
+// mounting holes
+func (i Intellijel) MountingHoleBottomY() float64 {
+	return MountingHoleBottomY1U
 }

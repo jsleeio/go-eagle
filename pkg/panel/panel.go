@@ -53,4 +53,55 @@ type Panel interface {
 	// edges of the outline, and NOT to the X coordinates of any other features
 	// of the panel. (and especially not the mounting holes!)
 	HorizontalFit() float64
+
+	// RailHeightFromMountingHole indicates how far up (from centre of bottom
+	// mounting hole) or down (from centre of top mounting hole) the mounting
+	// rail extends. This can be used to define KeepOut areas on the panel
+	//
+	// eg. For all Eurorack-related formats this is likely to be around 5mm,
+	// though the exact figure will differ with rail type.
+	//
+	// This is primarily used to determine how much empty space there is between
+	// the mounting rails, so best to err on the side of larger than smaller
+	RailHeightFromMountingHole() float64
+
+	// MountingHoleTopY returns the Y coordinate for the top row of mounting
+	// holes
+	MountingHoleTopY() float64
+
+	// MountingHoleBottomY returns the Y coordinate for the bottom row of
+	// mounting holes
+	MountingHoleBottomY() float64
+}
+
+func LeftX(spec Panel) float64 {
+	return spec.HorizontalFit() / 2
+}
+
+func RightX(spec Panel) float64 {
+	return spec.Width() - spec.HorizontalFit()/2
+}
+
+func TopY(spec Panel) float64 {
+	return spec.Height()
+}
+
+func BottomY(spec Panel) float64 {
+	return 0
+}
+
+func TopLeft(spec Panel) Point {
+	return Point{X: LeftX(spec), Y: TopY(spec)}
+}
+
+func TopRight(spec Panel) Point {
+	return Point{X: RightX(spec), Y: TopY(spec)}
+}
+
+func BottomLeft(spec Panel) Point {
+	return Point{X: LeftX(spec), Y: BottomY(spec)}
+}
+
+func BottomRight(spec Panel) Point {
+	return Point{X: RightX(spec), Y: BottomY(spec)}
 }
