@@ -44,22 +44,20 @@ const (
 )
 
 type config struct {
-	Width          *int
-	Format         *string
-	Output         *string
-	RefBoard       *string
-	OutlineLayer   *string
-	CopperPullback *float64
+	Width        *int
+	Format       *string
+	Output       *string
+	RefBoard     *string
+	OutlineLayer *string
 }
 
 func configureFromFlags() (*config, error) {
 	c := &config{
-		Width:          flag.Int("width", 4, "width of the panel, in integer units appropriate for the format"),
-		Format:         flag.String("format", FormatEurorack, "panel format to create (eurorack, pulplogic, intellijel)"),
-		RefBoard:       flag.String("reference-board", "", "reference Eagle board file to read layer information from"),
-		Output:         flag.String("output", "newpanel.brd", "filename to write new Eagle board file to"),
-		OutlineLayer:   flag.String("outline-layer", "Dimension", "layer to draw board outline in"),
-		CopperPullback: flag.Float64("copper-pullback", 0.1, "Distance to pull back the copper pour from the panel edge"),
+		Width:        flag.Int("width", 4, "width of the panel, in integer units appropriate for the format"),
+		Format:       flag.String("format", FormatEurorack, "panel format to create (eurorack, pulplogic, intellijel)"),
+		RefBoard:     flag.String("reference-board", "", "reference Eagle board file to read layer information from"),
+		Output:       flag.String("output", "newpanel.brd", "filename to write new Eagle board file to"),
+		OutlineLayer: flag.String("outline-layer", "Dimension", "layer to draw board outline in"),
 	}
 	flag.Parse()
 	if *c.RefBoard == "" {

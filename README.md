@@ -1,6 +1,4 @@
-# go-eagle
-
-## overview
+# overview
 
 This repository contains code and tools for interacting with Autodesk Eagle files.
 
@@ -11,7 +9,7 @@ At present, the below tools are included:
 * `schroff`: derive a new Eurorack panel board file from the board file for
   your circuit
 
-## installing
+# installing
 
 On a Mac with Homebrew, you can use my Homebrew tap to install the `panelgen`
 and `schroff` commands:
@@ -22,7 +20,7 @@ brew install go-eagle
 ```
 
 
-## panelgen
+# panelgen
 
 `panelgen` is used for creating new, blank panels in Eurorack, Pulplogic 1U or
 Intellijel 1U formats. An existing Eagle board file is required in order to
@@ -35,8 +33,24 @@ Demonstration usage, creating a 6hp Pulplogic tile:
 $ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd -width=6
 ```
 
+## commandline options
 
-## schroff
+```
+$ ./panelgen --help
+Usage of ./panelgen:
+  -format string
+    	panel format to create (eurorack, pulplogic, intellijel) (default "eurorack")
+  -outline-layer string
+    	layer to draw board outline in (default "Dimension")
+  -output string
+    	filename to write new Eagle board file to (default "newpanel.brd")
+  -reference-board string
+    	reference Eagle board file to read layer information from
+  -width int
+    	width of the panel, in integer units appropriate for the format (default 4)
+```
+
+# schroff
 
 `schroff` is used for deriving
 [Eurorack module front panels](http://www.doepfer.de/a100_man/a100m_e.htm)
@@ -52,7 +66,7 @@ board file to discover:
 
 Components that need panel holes must have a `PANEL_DRILL_MM` attribute.
 
-### list of global and component attributes
+## list of global and component attributes
 
 attribute name         | type      | default           | purpose
 ---------------------- | --------- | ----------------- | --------------------------------------------------------------------
@@ -65,25 +79,40 @@ attribute name         | type      | default           | purpose
 `PANEL_DRILL_MM`       | component | _none_            | panel drill size to create for a component. Required for drill holes.
 `PANEL_LEGEND`         | component | _component name_  | override panel legend text for a component
 
-### generating board files
+## commandline options
+
+```
+$ ./schroff --help
+Usage of ./schroff:
+  -format string
+    	panel format to create (eurorack, pulplogic, intellijel) (default "eurorack")
+  -hole-stop-radius float
+    	Radius to pull back soldermask around a hole (default 2)
+  -text-size float
+    	label text size (default 2.25)
+  -text-spacing float
+    	spacing between a hole and its related label (default 3.5)
+```
+
+## generating board files
 
 To generate a panel board file:
 
 ```
-$ ./schroff wavolver2-rev1.brd
-2019/04/28 17:02:24 board: found HEADER_TEXT attribute with value "Wavolver II"
-2019/04/28 17:02:24 board: found FOOTER_TEXT attribute with value "Ian Fritz"
-2019/04/28 17:02:24 FOLDMIX: found PANEL_DRILL_MM attribute with value "7"
-2019/04/28 17:02:24 FOLDOUT: found PANEL_DRILL_MM attribute with value "6"
-2019/04/28 17:02:24 INPUT: found PANEL_DRILL_MM attribute with value "6"
-2019/04/28 17:02:24 OFFSET: found PANEL_DRILL_MM attribute with value "7"
-2019/04/28 17:02:24 OMOD: found PANEL_DRILL_MM attribute with value "6"
-2019/04/28 17:02:24 OMODLEV: found PANEL_DRILL_MM attribute with value "7"
-2019/04/28 17:02:24 OUTPUT: found PANEL_DRILL_MM attribute with value "6"
-2019/04/28 17:02:24 P2AMP: found PANEL_DRILL_MM attribute with value "7"
-2019/04/28 17:02:24 WIDTH: found PANEL_DRILL_MM attribute with value "7"
-2019/04/28 17:02:24 WMOD: found PANEL_DRILL_MM attribute with value "6"
-2019/04/28 17:02:24 WMODLEV: found PANEL_DRILL_MM attribute with value "7"
+$ ./schroff ~/Documents/eagle/jslee/fritz/wavolver2/wavolver2-rev1.brd
+2019/05/05 22:03:26 board: found PANEL_HEADER_TEXT attribute with value "Wavolver II"
+2019/05/05 22:03:26 board: found PANEL_FOOTER_TEXT attribute with value "Ian Fritz"
+2019/05/05 22:03:26 FOLDMIX: found PANEL_DRILL_MM attribute with value "7"
+2019/05/05 22:03:26 FOLDOUT: found PANEL_DRILL_MM attribute with value "6"
+2019/05/05 22:03:26 INPUT: found PANEL_DRILL_MM attribute with value "6"
+2019/05/05 22:03:26 OFFSET: found PANEL_DRILL_MM attribute with value "7"
+2019/05/05 22:03:26 OMOD: found PANEL_DRILL_MM attribute with value "6"
+2019/05/05 22:03:26 OMODLEV: found PANEL_DRILL_MM attribute with value "7"
+2019/05/05 22:03:26 OUTPUT: found PANEL_DRILL_MM attribute with value "6"
+2019/05/05 22:03:26 P2AMP: found PANEL_DRILL_MM attribute with value "7"
+2019/05/05 22:03:26 WIDTH: found PANEL_DRILL_MM attribute with value "7"
+2019/05/05 22:03:26 WMOD: found PANEL_DRILL_MM attribute with value "6"
+2019/05/05 22:03:26 WMODLEV: found PANEL_DRILL_MM attribute with value "7"
 ```
 
 The output panel file takes the name of the input file and adds the suffix `.panel.brd`:
@@ -93,7 +122,7 @@ $ ls -l wavolver2-rev1.brd.panel.brd
 -rw-r--r--  1 jslee  staff  17912 28 Apr 17:02 wavolver2-rev1.brd.panel.brd
 ```
 
-## compatibility
+# compatibility
 
 At present the generated board files load just fine in Eagle 9.3.2 and 9.4.0
 but are not accepted by [OSHPark](https://oshpark.com/)'s Eagle board loader.
@@ -101,12 +130,12 @@ I'm not sure why this is, but it's most likely *not* OSHPark's fault, so please
 *don't* complain to them if you try to use this. Just generate some Gerber
 files instead.
 
-## to-do
+# to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items
 * BOM generation tool
 
-## copyright
+# copyright
 
 Copyright 2019 John Slee <jslee@jslee.io>.
 
