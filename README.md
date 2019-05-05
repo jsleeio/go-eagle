@@ -47,13 +47,30 @@ board file to discover:
 * which circuit components (potentiometers, jacks, LEDs, etc) require panel drill holes
 * the size of any such drill holes (via the component's `PANEL_DRILL_MM` attribute)
 * where the holes should be placed (via the component's origin coordinates)
-* header text to be placed in silkscreen at the top of the panel (via the board's `HEADER_TEXT` attribute)
-* footer text to be placed in silkscreen at the bottom of the panel (via the board's `FOOTER_TEXT` attribute)
+* header text to be placed in silkscreen at the top of the panel (via the board's `PANEL_HEADER_TEXT` attribute)
+* footer text to be placed in silkscreen at the bottom of the panel (via the board's `PANEL_FOOTER_TEXT` attribute)
+
+Components that need panel holes must have a `PANEL_DRILL_MM` attribute.
+
+### list of global and component attributes
+
+attribute name         | type      | default           | purpose
+---------------------- | --------- | ----------------- | --------------------------------------------------------------------
+`PANEL_LEGEND_SKIP_RE` | global    | _none_            | RE2 expression; if a component name matches, legend text is skipped
+`PANEL_HEADER_TEXT`    | global    | `<<HEADER_TEXT>>` | text for header section of panel
+`PANEL_FOOTER_TEXT`    | global    | `<<FOOTER_TEXT>>` | text for footer section of panel
+`PANEL_LEGEND_LAYER`   | global    | `tStop`           | layer to place panel legend text on
+`PANEL_HEADER_LAYER`   | global    | `tStop`           | layer to place header text on
+`PANEL_FOOTER_LAYER`   | global    | `tStop`           | layer to place footer text on
+`PANEL_DRILL_MM`       | component | _none_            | panel drill size to create for a component. Required for drill holes.
+`PANEL_LEGEND`         | component | _component name_  | override panel legend text for a component
+
+### generating board files
 
 To generate a panel board file:
 
 ```
-$ ./schroff -copper-pullback=0.5 -hole-stop-radius=2.5 wavolver2-rev1.brd
+$ ./schroff wavolver2-rev1.brd
 2019/04/28 17:02:24 board: found HEADER_TEXT attribute with value "Wavolver II"
 2019/04/28 17:02:24 board: found FOOTER_TEXT attribute with value "Ian Fritz"
 2019/04/28 17:02:24 FOLDMIX: found PANEL_DRILL_MM attribute with value "7"
@@ -76,17 +93,16 @@ $ ls -l wavolver2-rev1.brd.panel.brd
 -rw-r--r--  1 jslee  staff  17912 28 Apr 17:02 wavolver2-rev1.brd.panel.brd
 ```
 
-### compatibility
+## compatibility
 
-At present the generated board files load just fine in Eagle 9.3.2 but are not
-accepted by [OSHPark](https://oshpark.com/)'s Eagle board loader. I'm not sure
-why this is, but it's most likely *not* OSHPark's fault, so please *don't*
-complain to them if you try to use this. Just generate some Gerber files
-instead.
+At present the generated board files load just fine in Eagle 9.3.2 and 9.4.0
+but are not accepted by [OSHPark](https://oshpark.com/)'s Eagle board loader.
+I'm not sure why this is, but it's most likely *not* OSHPark's fault, so please
+*don't* complain to them if you try to use this. Just generate some Gerber
+files instead.
 
-### to-do
+## to-do
 
-* import panel text for components from optional component attributes, eg. `PANEL_TEXT`
 * exhaustively scan the Eagle DTD and add the various missing items
 * BOM generation tool
 

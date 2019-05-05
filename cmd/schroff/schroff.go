@@ -25,124 +25,167 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"regexp"
 	"strconv"
 
-	"github.com/jsleeio/go-eagle/internal/outline"
 	"github.com/jsleeio/go-eagle/pkg/eagle"
+	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
+	"github.com/jsleeio/go-eagle/pkg/format/intellijel"
+	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
+	"github.com/jsleeio/go-eagle/pkg/panel"
+
+	"github.com/jsleeio/go-eagle/internal/boardops/standard"
+	"github.com/jsleeio/go-eagle/internal/outline"
 )
 
-func printElements(e *eagle.Eagle) {
-	for _, elem := range e.Board.Elements {
-		fmt.Printf("%s is a %s::%s at (%v,%v)\n",
-			elem.Name, elem.Library, elem.Package, elem.X, elem.Y)
-	}
+const (
+	// FormatEurorack is the Doepfer-defined 3U specification. Not Eurocard!
+	FormatEurorack = "eurorack"
+	// FormatPulplogic is the PulpLogic-defined 1U specification
+	FormatPulplogic = "pulplogic"
+	// FormatIntellijel is the Intellijel-defined 1U specification
+	FormatIntellijel = "intellijel"
+)
+
+// wrap up all of the context required for creating panel features
+// into one place to simplify and reduce error
+type panelLayoutContext struct {
+	bc    outline.BoardCoords
+	board *eagle.Eagle
+	panel *eagle.Eagle
+	cfg   config
+	spec  panel.Panel
+	// legendSkipRe is pulled from the board global attribute PANEL_LEGEND_SKIP_RE.
+	// If a component name matches this regexp, it will NOT have a panel legend
+	// text object created.
+	legendSkipRe *regexp.Regexp
+	legendLayer  string
+	headerLayer  string
+	footerLayer  string
 }
 
-func schroffSystemHoles(hp int) []eagle.Hole {
-	holes := []eagle.Hole{
-		eagle.Hole{X: 7.5, Y: 3.0, Drill: 3.2},
-		eagle.Hole{X: 7.5, Y: 125.5, Drill: 3.2},
+func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, error) {
+	plc := panelLayoutContext{
+		cfg:          c,
+		board:        board,
+		bc:           outline.DeriveBoardCoords(board),
+		legendLayer:  "tStop",
+		headerLayer:  "tStop",
+		footerLayer:  "tStop",
+		legendSkipRe: nil,
 	}
-	if hp > 8 {
-		// http://www.doepfer.de/a100_man/a100m_e.htm
-		rhsX := 7.5 + (5.08 * float64(hp-3))
-		holes = append(holes, eagle.Hole{X: rhsX, Y: 3.0, Drill: 3.2})
-		holes = append(holes, eagle.Hole{X: rhsX, Y: 125.5, Drill: 3.2})
+	spec, err := panelSpecForFormat(plc.bc.HP, *plc.cfg.Format)
+	if err != nil {
+		return panelLayoutContext{}, err
 	}
-	return holes
-}
-
-func wireRectangle(x1, y1, x2, y2 float64, layer int) []eagle.Wire {
-	return []eagle.Wire{
-		{X1: x1, Y1: y1, X2: x2, Y2: y1, Layer: layer, Width: 1}, // bottom
-		{X1: x1, Y1: y2, X2: x2, Y2: y2, Layer: layer, Width: 1}, // top
-		{X1: x1, Y1: y1, X2: x1, Y2: y2, Layer: layer, Width: 1}, // left
-		{X1: x2, Y1: y1, X2: x2, Y2: y2, Layer: layer, Width: 1}, // right
+	plc.spec = spec
+	plc.panel = plc.board.CloneEmpty()
+	if err := standard.ApplyStandardBoardOperations(plc.panel, plc.spec); err != nil {
+		return panelLayoutContext{}, fmt.Errorf("error creating panel features: %v", err)
 	}
-}
-
-func schroffPanelForBoard(board *eagle.Eagle, cfg config) (*eagle.Eagle, outline.BoardCoords) {
-	bc := outline.DeriveBoardCoords(board)
-	panel := board.CloneEmpty()
-	// http://www.doepfer.de/a100_man/a100m_e.htm
-	// Doepfer spec does includes a table of some width corrections
-	// but 0.25mm should be fine for all likely panel sizes really
-	panelWidth := 5.08*float64(bc.HP) - 0.25
-	panelHeight := 128.5
 	// centre the board on the panel
-	bc.XOffset += (panelWidth - bc.Width()) / 2
-	bc.YOffset += (panelHeight - bc.Height()) / 2
-	dimension := board.LayerByName("Dimension")
-	// outline of the panel board
-	for _, wire := range eagle.BoardOutlineWires(panelWidth, panelHeight, dimension) {
-		panel.Board.Plain.Wires = append(panel.Board.Plain.Wires, wire)
+	plc.bc.XOffset += (plc.spec.Width()-plc.bc.Width())/2 + plc.spec.HorizontalFit()/2
+	plc.bc.YOffset += (plc.spec.Height() - plc.bc.Height()) / 2
+	if legendSkipRe, ok := plc.board.Board.AttributeByName("PANEL_LEGEND_SKIP_RE"); ok {
+		if legendSkipRe != "" {
+			plc.legendSkipRe = regexp.MustCompile(legendSkipRe)
+		}
 	}
-	// place a board rectangle in tDocu layer to indicate its alignment
-	// with the panel
-	tdocu := board.LayerByName("tDocu")
-	indicator := wireRectangle(
-		bc.XMin+bc.XOffset, bc.YMin+bc.YOffset,
-		bc.XMax+bc.XOffset, bc.YMax+bc.YOffset,
-		tdocu,
-	)
-	for _, wire := range indicator {
-		panel.Board.Plain.Wires = append(panel.Board.Plain.Wires, wire)
+	if headerLayer, ok := plc.board.Board.AttributeByName("PANEL_HEADER_LAYER"); ok {
+		plc.headerLayer = headerLayer
 	}
-	// place an outline of the rail areas in tKeepout layer to indicate their
-	// size and location. The magic number 8 here is derived from the Doepfer
-	// spec (system hole centre is 3mm from top or bottom edge of panel) but
-	// not defined in it explicitly, as enclosures do not all use the same rails.
-	// All known-used Eurorack rails are <= 10mm wide, however, so adding
-	// or subtracting 5mm is a pretty good heuristic.
-	bRail := eagle.Rectangle{X1: 0, Y1: 0, X2: panelWidth, Y2: 8, Layer: tdocu}
-	tRail := eagle.Rectangle{X1: 0, Y1: panelHeight - 8, X2: panelWidth, Y2: panelHeight, Layer: tdocu}
-	panel.Board.Plain.Rectangles = append(panel.Board.Plain.Rectangles, bRail)
-	panel.Board.Plain.Rectangles = append(panel.Board.Plain.Rectangles, tRail)
+	if footerLayer, ok := plc.board.Board.AttributeByName("PANEL_FOOTER_LAYER"); ok {
+		plc.footerLayer = footerLayer
+	}
+	if legendLayer, ok := plc.board.Board.AttributeByName("PANEL_LEGEND_LAYER"); ok {
+		plc.legendLayer = legendLayer
+	}
+	return plc, nil
+}
+
+func panelSpecForFormat(width int, format string) (panel.Panel, error) {
+	var spec panel.Panel
+	switch format {
+	case FormatEurorack:
+		spec = eurorack.NewEurorack(width)
+	case FormatPulplogic:
+		spec = pulplogic.NewPulplogic(width)
+	case FormatIntellijel:
+		spec = intellijel.NewIntellijel(width)
+	default:
+		return nil, fmt.Errorf("unsupported format: %s", format)
+	}
+	return spec, nil
+}
+
+func headerOp(plc panelLayoutContext) {
 	// add the header and footer
-	headertext, headerok := board.Board.AttributeByName("HEADER_TEXT")
+	headertext, headerok := plc.board.Board.AttributeByName("PANEL_HEADER_TEXT")
 	header := eagle.Text{
-		X:     panelWidth / 2.0,
-		Y:     panelHeight - 3.0,
+		X:     plc.spec.Width() / 2.0,
+		Y:     plc.spec.MountingHoleTopY(),
 		Align: "center",
 		Size:  3.0,
 		Text:  "<<HEADER_TEXT>>",
-		Layer: board.LayerByName("tSilk"),
+		Layer: plc.panel.LayerByName(plc.headerLayer),
 	}
 	if headerok {
-		log.Printf("board: found HEADER_TEXT attribute with value %q", headertext)
+		log.Printf("board: found PANEL_HEADER_TEXT attribute with value %q", headertext)
 		header.Text = headertext
 	}
-	panel.Board.Plain.Texts = append(panel.Board.Plain.Texts, header)
-	footertext, footerok := board.Board.AttributeByName("FOOTER_TEXT")
+	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, header)
+	footertext, footerok := plc.board.Board.AttributeByName("PANEL_FOOTER_TEXT")
 	footer := eagle.Text{
-		X:     panelWidth / 2.0,
-		Y:     3.0,
+		X:     plc.spec.Width() / 2.0,
+		Y:     plc.spec.MountingHoleBottomY(),
 		Align: "center",
 		Size:  3.0,
 		Text:  "<<FOOTER_TEXT>>",
-		Layer: board.LayerByName("tSilk"),
+		Layer: plc.panel.LayerByName(plc.footerLayer),
 	}
 	if footerok {
-		log.Printf("board: found FOOTER_TEXT attribute with value %q", footertext)
+		log.Printf("board: found PANEL_FOOTER_TEXT attribute with value %q", footertext)
 		footer.Text = footertext
 	}
-	panel.Board.Plain.Texts = append(panel.Board.Plain.Texts, footer)
-	// fill the non-rail areas with copper
-	copper := eagle.Rectangle{
-		X1:    *cfg.CopperPullback,
-		Y1:    8 + *cfg.CopperPullback,
-		X2:    panelWidth - *cfg.CopperPullback,
-		Y2:    panelHeight - 8 - *cfg.CopperPullback,
-		Layer: panel.LayerByName("Top"),
+	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, footer)
+}
+
+func elementOp(plc panelLayoutContext, elem eagle.Element) {
+	hole, needHole, err := holeForPanelElement(elem)
+	if err != nil {
+		log.Fatalf("can't find drill size for element %q: %v", elem.Name, err)
 	}
-	panel.Board.Plain.Rectangles = append(panel.Board.Plain.Rectangles, copper)
-	copper.Layer = panel.LayerByName("Bottom")
-	panel.Board.Plain.Rectangles = append(panel.Board.Plain.Rectangles, copper)
-	// add the Schroff system holes
-	for _, hole := range schroffSystemHoles(bc.HP) {
-		panel.Board.Plain.Holes = append(panel.Board.Plain.Holes, hole)
+	if needHole {
+		// the hole was generated with coordinates from the source board, now
+		// adjust them to be in the right place on the panel
+		tstop := plc.panel.LayerByName("tStop")
+		hole.X += plc.bc.XOffset
+		hole.Y += plc.bc.YOffset
+		plc.panel.Board.Plain.Holes = append(plc.panel.Board.Plain.Holes, hole)
+		text := eagle.Text{
+			X:     hole.X,
+			Y:     hole.Y + (hole.Drill / 2.0) + *plc.cfg.TextSpacing,
+			Size:  *plc.cfg.TextSize,
+			Layer: plc.panel.LayerByName(plc.legendLayer),
+			Text:  elem.Name,
+			Align: "bottom-center",
+			Font:  "vector",
+		}
+		if legend, ok := elem.AttributeByName("PANEL_LEGEND"); ok {
+			text.Text = legend
+		}
+		if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
+			plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
+		}
+		stop := eagle.Circle{
+			X:      hole.X,
+			Y:      hole.Y,
+			Radius: hole.Drill / 2.0,
+			Width:  *plc.cfg.HoleStopRadius,
+			Layer:  tstop,
+		}
+		plc.panel.Board.Plain.Circles = append(plc.panel.Board.Plain.Circles, stop)
 	}
-	return panel, bc
 }
 
 // generate a panel hole for a single element, if necessary
@@ -159,31 +202,22 @@ func holeForPanelElement(elem eagle.Element) (eagle.Hole, bool, error) {
 		hole.Drill = f
 		return hole, true, nil
 	}
-	// if not, check our defaults...
-	defaultDrills := map[string]float64{
-		// "MusicThingModular::9MM_SNAP-IN_POT":    7.0,
-		// "MusicThingModular::WQP-PJ301M-12_JACK": 6.0,
-	}
-	if defdrill, ok := defaultDrills[elem.Library+"::"+elem.Package]; ok {
-		hole.Drill = defdrill
-		return hole, true, nil
-	}
 	return eagle.Hole{}, false, nil
 }
 
 type config struct {
+	Format         *string
 	TextSpacing    *float64
 	TextSize       *float64
 	HoleStopRadius *float64
-	CopperPullback *float64
 }
 
 func configureFromFlags() config {
 	cfg := config{
+		Format:         flag.String("format", FormatEurorack, "panel format to create (eurorack, pulplogic, intellijel)"),
 		TextSpacing:    flag.Float64("text-spacing", 3.5, "spacing between a hole and its related label"),
 		TextSize:       flag.Float64("text-size", 2.25, "label text size"),
 		HoleStopRadius: flag.Float64("hole-stop-radius", 2.0, "Radius to pull back soldermask around a hole"),
-		CopperPullback: flag.Float64("copper-pullback", 0.1, "Distance to pull back the copper pour from the panel edge"),
 	}
 	flag.Parse()
 	return cfg
@@ -196,40 +230,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("can't load input file %q: %v", filename, err)
 		}
-		panel, bc := schroffPanelForBoard(board, config)
-		tstop := panel.LayerByName("tStop")
-		for _, elem := range board.Board.Elements {
-			hole, needHole, err := holeForPanelElement(elem)
-			if err != nil {
-				log.Fatalf("can't find drill size for element %q: %v", elem.Name, err)
-			}
-			if needHole {
-				// offset to allow for centreing the board on the panel
-				hole.X += bc.XOffset
-				hole.Y += bc.YOffset
-				panel.Board.Plain.Holes = append(panel.Board.Plain.Holes, hole)
-				text := eagle.Text{
-					X:     hole.X,
-					Y:     hole.Y + (hole.Drill / 2.0) + *config.TextSpacing,
-					Size:  *config.TextSize,
-					Layer: tstop,
-					Text:  elem.Name,
-					Align: "bottom-center",
-					Font:  "vector",
-				}
-				panel.Board.Plain.Texts = append(panel.Board.Plain.Texts, text)
-				stop := eagle.Circle{
-					X:      hole.X,
-					Y:      hole.Y,
-					Radius: hole.Drill / 2.0,
-					Width:  *config.HoleStopRadius,
-					Layer:  tstop,
-				}
-				panel.Board.Plain.Circles = append(panel.Board.Plain.Circles, stop)
-			}
+		// panel, bc := schroffPanelForBoard(board, config)
+		plc, err := setupPanelLayoutContext(board, config)
+		if err != nil {
+			log.Fatalf("can't setup panel layout context: %v", err)
+		}
+		headerOp(plc)
+		for _, elem := range plc.board.Board.Elements {
+			elementOp(plc, elem)
 		}
 		outFilename := filepath.Base(filename) + ".panel.brd"
-		if err := panel.WriteFile(outFilename); err != nil {
+		if err := plc.panel.WriteFile(outFilename); err != nil {
 			log.Fatalf("can't write output file %q: %v", outFilename, err)
 		}
 	}
