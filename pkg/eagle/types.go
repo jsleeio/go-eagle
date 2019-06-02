@@ -192,15 +192,8 @@ type Element struct {
 	Attributes   []Attribute `xml:"attribute"`
 }
 
-// AttributeByName attempts to retrieve the value of a named attribute
-// attached to an element, and if found, returns it
-func (e Element) AttributeByName(name string) (string, bool) {
-	for _, attribute := range e.Attributes {
-		if attribute.Name == name {
-			return attribute.Value, true
-		}
-	}
-	return "", false
+func (e Element) GetAttributes() []Attribute {
+	return e.Attributes
 }
 
 // Plain object
@@ -234,6 +227,10 @@ type Board struct {
 	Attributes []Attribute `xml:"attributes>attribute"`
 }
 
+func (b Board) GetAttributes() []Attribute {
+	return b.Attributes
+}
+
 // NewBoard constructs a new empty Board object.
 func NewBoard() Board {
 	return Board{
@@ -250,15 +247,4 @@ type Eagle struct {
 	Grid    Grid    `xml:"drawing>grid"`
 	Layers  []Layer `xml:"drawing>layers>layer"`
 	Board   Board   `xml:"drawing>board"`
-}
-
-// AttributeByName attempts to retrieve the value of a named attribute
-// attached to an element, and if found, returns it
-func (b Board) AttributeByName(name string) (string, bool) {
-	for _, attribute := range b.Attributes {
-		if attribute.Name == name {
-			return attribute.Value, true
-		}
-	}
-	return "", false
 }

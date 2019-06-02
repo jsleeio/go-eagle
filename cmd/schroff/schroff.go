@@ -26,7 +26,6 @@ import (
 	"log"
 	"path/filepath"
 	"regexp"
-	"strconv"
 
 	"github.com/jsleeio/go-eagle/pkg/eagle"
 	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
@@ -69,10 +68,13 @@ func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, 
 		cfg:          c,
 		board:        board,
 		bc:           outline.DeriveBoardCoords(board),
-		legendLayer:  "tStop",
-		headerLayer:  "tStop",
-		footerLayer:  "tStop",
+		legendLayer:  eagle.AttributeString(board.Board, "PANEL_LEGEND_LAYER", "tStop"),
+		headerLayer:  eagle.AttributeString(board.Board, "PANEL_HEADER_LAYER", "tStop"),
+		footerLayer:  eagle.AttributeString(board.Board, "PANEL_FOOTER_LAYER", "tStop"),
 		legendSkipRe: nil,
+	}
+	if lsre := eagle.AttributeString(board.Board, "PANEL_LEGEND_SKIP_RE", ""); lsre != "" {
+		plc.legendSkipRe = regexp.MustCompile(lsre)
 	}
 	spec, err := panelSpecForFormat(plc.bc.HP, *plc.cfg.Format)
 	if err != nil {
@@ -86,20 +88,6 @@ func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, 
 	// centre the board on the panel
 	plc.bc.XOffset += (plc.spec.Width()-plc.bc.Width())/2 + plc.spec.HorizontalFit()/2
 	plc.bc.YOffset += (plc.spec.Height() - plc.bc.Height()) / 2
-	if legendSkipRe, ok := plc.board.Board.AttributeByName("PANEL_LEGEND_SKIP_RE"); ok {
-		if legendSkipRe != "" {
-			plc.legendSkipRe = regexp.MustCompile(legendSkipRe)
-		}
-	}
-	if headerLayer, ok := plc.board.Board.AttributeByName("PANEL_HEADER_LAYER"); ok {
-		plc.headerLayer = headerLayer
-	}
-	if footerLayer, ok := plc.board.Board.AttributeByName("PANEL_FOOTER_LAYER"); ok {
-		plc.footerLayer = footerLayer
-	}
-	if legendLayer, ok := plc.board.Board.AttributeByName("PANEL_LEGEND_LAYER"); ok {
-		plc.legendLayer = legendLayer
-	}
 	return plc, nil
 }
 
@@ -119,46 +107,33 @@ func panelSpecForFormat(width int, format string) (panel.Panel, error) {
 }
 
 func headerOp(plc panelLayoutContext) {
+	hox, err := eagle.AttributeFloat(plc.board.Board, "PANEL_HEADER_OFFSET_X", 0.0)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// add the header and footer
-	headertext, headerok := plc.board.Board.AttributeByName("PANEL_HEADER_TEXT")
 	header := eagle.Text{
-		X:     plc.spec.Width() / 2.0,
+		X:     plc.spec.Width()/2.0 + hox,
 		Y:     plc.spec.MountingHoleTopY(),
 		Align: "center",
 		Size:  3.0,
-		Text:  "<<HEADER_TEXT>>",
+		Text:  eagle.AttributeString(plc.board.Board, "PANEL_HEADER_TEXT", "<HEADER>"),
 		Layer: plc.panel.LayerByName(plc.headerLayer),
 	}
-	if headerok {
-		log.Printf("board: found PANEL_HEADER_TEXT attribute with value %q", headertext)
-		header.Text = headertext
+	fox, err := eagle.AttributeFloat(plc.board.Board, "PANEL_FOOTER_OFFSET_X", 0.0)
+	if err != nil {
+		log.Fatal(err)
 	}
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, header)
-	footertext, footerok := plc.board.Board.AttributeByName("PANEL_FOOTER_TEXT")
 	footer := eagle.Text{
-		X:     plc.spec.Width() / 2.0,
+		X:     plc.spec.Width()/2.0 + fox,
 		Y:     plc.spec.MountingHoleBottomY(),
 		Align: "center",
 		Size:  3.0,
-		Text:  "<<FOOTER_TEXT>>",
+		Text:  eagle.AttributeString(plc.board.Board, "PANEL_FOOTER_TEXT", "<FOOTER>"),
 		Layer: plc.panel.LayerByName(plc.footerLayer),
 	}
-	if footerok {
-		log.Printf("board: found PANEL_FOOTER_TEXT attribute with value %q", footertext)
-		footer.Text = footertext
-	}
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, footer)
-}
-
-func elementFloatAttribute(elem eagle.Element, attribute string, def float64) (float64, error) {
-	if s, ok := elem.AttributeByName(attribute); ok {
-		if f, err := strconv.ParseFloat(s, 64); err != nil {
-			return 0, fmt.Errorf("unparseable numeric attribute %q: %v", attribute, err)
-		} else {
-			return f, nil
-		}
-	}
-	return def, nil
 }
 
 func elementOp(plc panelLayoutContext, elem eagle.Element) {
@@ -172,13 +147,13 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 		tstop := plc.panel.LayerByName("tStop")
 		hole.X += plc.bc.XOffset
 		hole.Y += plc.bc.YOffset
-		aox, err := elementFloatAttribute(elem, "PANEL_LEGEND_OFFSET_X", 0.0)
+		aox, err := eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_X", 0.0)
 		if err != nil {
-			log.Fatalf("element %s has an unparseable PANEL_LEGEND_OFFSET_X attribute: %v", elem.Name, err)
+			log.Fatal(err)
 		}
-		aoy, err := elementFloatAttribute(elem, "PANEL_LEGEND_OFFSET_Y", 0.0)
+		aoy, err := eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_Y", 0.0)
 		if err != nil {
-			log.Fatalf("element %s has an unparseable PANEL_LEGEND_OFFSET_Y attribute: %v", elem.Name, err)
+			log.Fatal(err)
 		}
 		plc.panel.Board.Plain.Holes = append(plc.panel.Board.Plain.Holes, hole)
 		text := eagle.Text{
@@ -186,23 +161,18 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 			Y:     aoy + hole.Y + (hole.Drill / 2.0) + *plc.cfg.TextSpacing,
 			Size:  *plc.cfg.TextSize,
 			Layer: plc.panel.LayerByName(plc.legendLayer),
-			Text:  elem.Name,
+			Text:  eagle.AttributeString(elem, "PANEL_LEGEND", elem.Name),
 			Align: "bottom-center",
 			Font:  "vector",
 		}
-		if legend, ok := elem.AttributeByName("PANEL_LEGEND"); ok {
-			text.Text = legend
-		}
 		if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
 			plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
+		} else {
+			fmt.Printf("%s: skipping legend\n", elem.Name)
 		}
-		hsw := *plc.cfg.HoleStopRadius
-		if hsws, ok := elem.AttributeByName("PANEL_HOLE_STOP_WIDTH"); ok {
-			if hswf, err := strconv.ParseFloat(hsws, 64); err != nil {
-				log.Fatalf("element %s has an unparseable PANEL_HOLE_STOP_WIDTH attribute %q: %v", elem.Name, hsws, err)
-			} else {
-				hsw = hswf
-			}
+		hsw, err := eagle.AttributeFloat(elem, "PANEL_HOLE_STOP_WIDTH", *plc.cfg.HoleStopRadius)
+		if err != nil {
+			log.Fatal(err)
 		}
 		stop := eagle.Circle{
 			X:      hole.X,
@@ -218,18 +188,17 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 // generate a panel hole for a single element, if necessary
 func holeForPanelElement(elem eagle.Element) (eagle.Hole, bool, error) {
 	hole := eagle.Hole{X: elem.X, Y: elem.Y}
-	// see if the element has a drill attribute first
-	if elemdrill, found := elem.AttributeByName("PANEL_DRILL_MM"); found {
-		log.Printf("%s: found PANEL_DRILL_MM attribute with value %q", elem.Name, elemdrill)
-		f, err := strconv.ParseFloat(elemdrill, 64)
-		if err != nil {
-			err = fmt.Errorf("element %s has an unparseable PANEL_DRILL_MM attribute %q: %v", elemdrill, err)
-			return eagle.Hole{}, false, err
-		}
-		hole.Drill = f
-		return hole, true, nil
+	// negative default drill size => no drill unless PANEL_DRILL_MM present
+	drillmm, err := eagle.AttributeFloat(elem, "PANEL_DRILL_MM", -1.0)
+	if err != nil {
+		return eagle.Hole{}, false, err
 	}
-	return eagle.Hole{}, false, nil
+	if drillmm < 0.0 { // no drill size found, do nothing
+		return eagle.Hole{}, false, nil
+	}
+	hole.Drill = drillmm
+	log.Printf("%s: found PANEL_DRILL_MM attribute with value %v", elem.Name, drillmm)
+	return hole, true, nil
 }
 
 type config struct {

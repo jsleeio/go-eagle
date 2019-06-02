@@ -69,19 +69,21 @@ Components that need panel holes must have a `PANEL_DRILL_MM` attribute.
 
 ## list of global and component attributes
 
-attribute name          | type      | default value     | purpose
------------------------ | --------- | ----------------- | --------------------------------------------------------------------
-`PANEL_LEGEND_SKIP_RE`  | global    | _none_            | RE2 expression; if a component name matches, legend text is skipped
-`PANEL_HEADER_TEXT`     | global    | `<<HEADER_TEXT>>` | text for header section of panel
-`PANEL_FOOTER_TEXT`     | global    | `<<FOOTER_TEXT>>` | text for footer section of panel
-`PANEL_LEGEND_LAYER`    | global    | `tStop`           | layer to place panel legend text on
-`PANEL_HEADER_LAYER`    | global    | `tStop`           | layer to place header text on
-`PANEL_FOOTER_LAYER`    | global    | `tStop`           | layer to place footer text on
-`PANEL_DRILL_MM`        | component | _none_            | panel drill size to create for a component. Required for drill holes.
-`PANEL_LEGEND`          | component | _component name_  | override panel legend text for a component
-`PANEL_LEGEND_OFFSET_X` | component | `0.0`             | nudge panel legend text left or right (millimetres)
-`PANEL_LEGEND_OFFSET_Y` | component | `0.0`             | nudge panel legend text up or down (millimetres)
-`PANEL_HOLE_STOP_WIDTH` | component | `2.0`             | override the width of the stop-mask ring around the component hole
+attribute name          | type      | default value    | purpose
+----------------------- | --------- | ---------------- | --------------------------------------------------------------------
+`PANEL_HEADER_LAYER`    | global    | `tStop`          | layer to place header text on
+`PANEL_HEADER_OFFSET_X` | global    | `0.0`            | nudge panel header text left or right (millimetres)
+`PANEL_HEADER_TEXT`     | global    | `<HEADER_TEXT>`  | text for header section of panel
+`PANEL_FOOTER_LAYER`    | global    | `tStop`          | layer to place footer text on
+`PANEL_FOOTER_OFFSET_X` | global    | `0.0`            | nudge panel footer text left or right (millimetres)
+`PANEL_FOOTER_TEXT`     | global    | `<FOOTER_TEXT>`  | text for footer section of panel
+`PANEL_LEGEND_LAYER`    | global    | `tStop`          | layer to place panel legend text on
+`PANEL_LEGEND_SKIP_RE`  | global    | _none_           | [RE2](https://github.com/google/re2/wiki/Syntax) expression; if a component name matches, legend text is skipped
+`PANEL_DRILL_MM`        | component | _none_           | panel drill size to create for a component. Required for drill holes.
+`PANEL_LEGEND`          | component | _component name_ | override panel legend text for a component
+`PANEL_LEGEND_OFFSET_X` | component | `0.0`            | nudge panel legend text left or right (millimetres)
+`PANEL_LEGEND_OFFSET_Y` | component | `0.0`            | nudge panel legend text up or down (millimetres)
+`PANEL_HOLE_STOP_WIDTH` | component | `2.0`            | override the width of the stop-mask ring around the component hole
 
 ## commandline options
 
@@ -103,20 +105,17 @@ Usage of ./schroff:
 To generate a panel board file:
 
 ```
-$ ./schroff ~/Documents/eagle/jslee/fritz/wavolver2/wavolver2-rev1.brd
-2019/05/05 22:03:26 board: found PANEL_HEADER_TEXT attribute with value "Wavolver II"
-2019/05/05 22:03:26 board: found PANEL_FOOTER_TEXT attribute with value "Ian Fritz"
-2019/05/05 22:03:26 FOLDMIX: found PANEL_DRILL_MM attribute with value "7"
-2019/05/05 22:03:26 FOLDOUT: found PANEL_DRILL_MM attribute with value "6"
-2019/05/05 22:03:26 INPUT: found PANEL_DRILL_MM attribute with value "6"
-2019/05/05 22:03:26 OFFSET: found PANEL_DRILL_MM attribute with value "7"
-2019/05/05 22:03:26 OMOD: found PANEL_DRILL_MM attribute with value "6"
-2019/05/05 22:03:26 OMODLEV: found PANEL_DRILL_MM attribute with value "7"
-2019/05/05 22:03:26 OUTPUT: found PANEL_DRILL_MM attribute with value "6"
-2019/05/05 22:03:26 P2AMP: found PANEL_DRILL_MM attribute with value "7"
-2019/05/05 22:03:26 WIDTH: found PANEL_DRILL_MM attribute with value "7"
-2019/05/05 22:03:26 WMOD: found PANEL_DRILL_MM attribute with value "6"
-2019/05/05 22:03:26 WMODLEV: found PANEL_DRILL_MM attribute with value "7"
+$ schroff morphlag-rev2.brd
+2019/06/02 17:48:17 FALL: found PANEL_DRILL_MM attribute with value 7
+2019/06/02 17:48:17 IN: found PANEL_DRILL_MM attribute with value 6
+2019/06/02 17:48:17 OUT: found PANEL_DRILL_MM attribute with value 6
+2019/06/02 17:48:17 OUTPOL: found PANEL_DRILL_MM attribute with value 6
+2019/06/02 17:48:17 RISE: found PANEL_DRILL_MM attribute with value 7
+2019/06/02 17:48:17 SHAPE: found PANEL_DRILL_MM attribute with value 7
+2019/06/02 17:48:17 SW1: found PANEL_DRILL_MM attribute with value 4.5
+2019/06/02 17:48:17 POLARIZE: found PANEL_DRILL_MM attribute with value 7
+2019/06/02 17:48:17 OUTINV: found PANEL_DRILL_MM attribute with value 6
+2019/06/02 17:48:17 MANUAL: found PANEL_DRILL_MM attribute with value 7.5
 ```
 
 The output panel file takes the name of the input file and adds the suffix `.panel.brd`:
@@ -136,7 +135,7 @@ them if you try to use this. Just generate some Gerber files instead.
 
 # to-do
 
-* exhaustively scan the Eagle DTD and add the various missing items
+* exhaustively scan the Eagle DTD and add the various missing items (libraries!)
 * ability to define custom panel formats, eg. to fit a specific custom enclosure
 * BOM generation tool
 
