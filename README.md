@@ -61,6 +61,7 @@ board file to discover:
 * which circuit components (potentiometers, jacks, LEDs, etc) require panel drill holes
 * the size of any such drill holes (via the component's `PANEL_DRILL_MM` attribute)
 * where the holes should be placed (via the component's origin coordinates)
+* where the legend text should be placed (via the component's origin coordinates, and optional offset)
 * header text to be placed in silkscreen at the top of the panel (via the board's `PANEL_HEADER_TEXT` attribute)
 * footer text to be placed in silkscreen at the bottom of the panel (via the board's `PANEL_FOOTER_TEXT` attribute)
 
@@ -68,16 +69,19 @@ Components that need panel holes must have a `PANEL_DRILL_MM` attribute.
 
 ## list of global and component attributes
 
-attribute name         | type      | default           | purpose
----------------------- | --------- | ----------------- | --------------------------------------------------------------------
-`PANEL_LEGEND_SKIP_RE` | global    | _none_            | RE2 expression; if a component name matches, legend text is skipped
-`PANEL_HEADER_TEXT`    | global    | `<<HEADER_TEXT>>` | text for header section of panel
-`PANEL_FOOTER_TEXT`    | global    | `<<FOOTER_TEXT>>` | text for footer section of panel
-`PANEL_LEGEND_LAYER`   | global    | `tStop`           | layer to place panel legend text on
-`PANEL_HEADER_LAYER`   | global    | `tStop`           | layer to place header text on
-`PANEL_FOOTER_LAYER`   | global    | `tStop`           | layer to place footer text on
-`PANEL_DRILL_MM`       | component | _none_            | panel drill size to create for a component. Required for drill holes.
-`PANEL_LEGEND`         | component | _component name_  | override panel legend text for a component
+attribute name          | type      | default value     | purpose
+----------------------- | --------- | ----------------- | --------------------------------------------------------------------
+`PANEL_LEGEND_SKIP_RE`  | global    | _none_            | RE2 expression; if a component name matches, legend text is skipped
+`PANEL_HEADER_TEXT`     | global    | `<<HEADER_TEXT>>` | text for header section of panel
+`PANEL_FOOTER_TEXT`     | global    | `<<FOOTER_TEXT>>` | text for footer section of panel
+`PANEL_LEGEND_LAYER`    | global    | `tStop`           | layer to place panel legend text on
+`PANEL_HEADER_LAYER`    | global    | `tStop`           | layer to place header text on
+`PANEL_FOOTER_LAYER`    | global    | `tStop`           | layer to place footer text on
+`PANEL_DRILL_MM`        | component | _none_            | panel drill size to create for a component. Required for drill holes.
+`PANEL_LEGEND`          | component | _component name_  | override panel legend text for a component
+`PANEL_LEGEND_OFFSET_X` | component | `0.0`             | nudge panel legend text left or right (millimetres)
+`PANEL_LEGEND_OFFSET_Y` | component | `0.0`             | nudge panel legend text up or down (millimetres)
+`PANEL_HOLE_STOP_WIDTH` | component | `2.0`             | override the width of the stop-mask ring around the component hole
 
 ## commandline options
 
@@ -124,15 +128,16 @@ $ ls -l wavolver2-rev1.brd.panel.brd
 
 # compatibility
 
-At present the generated board files load just fine in Eagle 9.3.2 and 9.4.0
-but are not accepted by [OSHPark](https://oshpark.com/)'s Eagle board loader.
-I'm not sure why this is, but it's most likely *not* OSHPark's fault, so please
-*don't* complain to them if you try to use this. Just generate some Gerber
-files instead.
+At present the generated board files load just fine in Eagle 9.3.2+ (probably
+many earlier versions also!) but are _not_ accepted by
+[OSHPark](https://oshpark.com/)'s Eagle board loader.  I'm not sure why this
+is, but it's most likely *not* OSHPark's fault, so please *don't* complain to
+them if you try to use this. Just generate some Gerber files instead.
 
 # to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items
+* ability to define custom panel formats, eg. to fit a specific custom enclosure
 * BOM generation tool
 
 # copyright

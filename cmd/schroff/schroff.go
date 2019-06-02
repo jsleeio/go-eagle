@@ -150,6 +150,17 @@ func headerOp(plc panelLayoutContext) {
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, footer)
 }
 
+func elementFloatAttribute(elem eagle.Element, attribute string, def float64) (float64, error) {
+	if s, ok := elem.AttributeByName(attribute); ok {
+		if f, err := strconv.ParseFloat(s, 64); err != nil {
+			return 0, fmt.Errorf("unparseable numeric attribute %q: %v", attribute, err)
+		} else {
+			return f, nil
+		}
+	}
+	return def, nil
+}
+
 func elementOp(plc panelLayoutContext, elem eagle.Element) {
 	hole, needHole, err := holeForPanelElement(elem)
 	if err != nil {
@@ -161,10 +172,18 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 		tstop := plc.panel.LayerByName("tStop")
 		hole.X += plc.bc.XOffset
 		hole.Y += plc.bc.YOffset
+		aox, err := elementFloatAttribute(elem, "PANEL_LEGEND_OFFSET_X", 0.0)
+		if err != nil {
+			log.Fatalf("element %s has an unparseable PANEL_LEGEND_OFFSET_X attribute: %v", elem.Name, err)
+		}
+		aoy, err := elementFloatAttribute(elem, "PANEL_LEGEND_OFFSET_Y", 0.0)
+		if err != nil {
+			log.Fatalf("element %s has an unparseable PANEL_LEGEND_OFFSET_Y attribute: %v", elem.Name, err)
+		}
 		plc.panel.Board.Plain.Holes = append(plc.panel.Board.Plain.Holes, hole)
 		text := eagle.Text{
-			X:     hole.X,
-			Y:     hole.Y + (hole.Drill / 2.0) + *plc.cfg.TextSpacing,
+			X:     aox + hole.X,
+			Y:     aoy + hole.Y + (hole.Drill / 2.0) + *plc.cfg.TextSpacing,
 			Size:  *plc.cfg.TextSize,
 			Layer: plc.panel.LayerByName(plc.legendLayer),
 			Text:  elem.Name,
@@ -177,11 +196,19 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 		if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
 			plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
 		}
+		hsw := *plc.cfg.HoleStopRadius
+		if hsws, ok := elem.AttributeByName("PANEL_HOLE_STOP_WIDTH"); ok {
+			if hswf, err := strconv.ParseFloat(hsws, 64); err != nil {
+				log.Fatalf("element %s has an unparseable PANEL_HOLE_STOP_WIDTH attribute %q: %v", elem.Name, hsws, err)
+			} else {
+				hsw = hswf
+			}
+		}
 		stop := eagle.Circle{
 			X:      hole.X,
 			Y:      hole.Y,
 			Radius: hole.Drill / 2.0,
-			Width:  *plc.cfg.HoleStopRadius,
+			Width:  hsw,
 			Layer:  tstop,
 		}
 		plc.panel.Board.Plain.Circles = append(plc.panel.Board.Plain.Circles, stop)
