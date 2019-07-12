@@ -107,27 +107,31 @@ func panelSpecForFormat(width int, format string) (panel.Panel, error) {
 }
 
 func headerOp(plc panelLayoutContext) {
-	hox, err := eagle.AttributeFloat(plc.board.Board, "PANEL_HEADER_OFFSET_X", 0.0)
-	if err != nil {
-		log.Fatal(err)
+	offsets := make(map[string]float64)
+	offsets["PANEL_HEADER_OFFSET_X"] = 0.0
+	offsets["PANEL_HEADER_OFFSET_Y"] = 0.0
+	offsets["PANEL_FOOTER_OFFSET_X"] = 0.0
+	offsets["PANEL_FOOTER_OFFSET_Y"] = 0.0
+	for k, defval := range offsets {
+		if v, err := eagle.AttributeFloat(plc.board.Board, k, defval); err == nil {
+			offsets[k] = v
+		} else {
+			log.Fatalf("invalid global attribute numeric value: %s: %v", err)
+		}
 	}
 	// add the header and footer
 	header := eagle.Text{
-		X:     plc.spec.Width()/2.0 + hox,
-		Y:     plc.spec.MountingHoleTopY(),
+		X:     plc.spec.Width()/2.0 + offsets["PANEL_HEADER_OFFSET_X"],
+		Y:     plc.spec.MountingHoleTopY() + offsets["PANEL_HEADER_OFFSET_Y"],
 		Align: "center",
 		Size:  3.0,
 		Text:  eagle.AttributeString(plc.board.Board, "PANEL_HEADER_TEXT", "<HEADER>"),
 		Layer: plc.panel.LayerByName(plc.headerLayer),
 	}
-	fox, err := eagle.AttributeFloat(plc.board.Board, "PANEL_FOOTER_OFFSET_X", 0.0)
-	if err != nil {
-		log.Fatal(err)
-	}
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, header)
 	footer := eagle.Text{
-		X:     plc.spec.Width()/2.0 + fox,
-		Y:     plc.spec.MountingHoleBottomY(),
+		X:     plc.spec.Width()/2.0 + offsets["PANEL_FOOTER_OFFSET_X"],
+		Y:     plc.spec.MountingHoleBottomY() + offsets["PANEL_FOOTER_OFFSET_Y"],
 		Align: "center",
 		Size:  3.0,
 		Text:  eagle.AttributeString(plc.board.Board, "PANEL_FOOTER_TEXT", "<FOOTER>"),

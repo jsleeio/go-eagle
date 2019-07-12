@@ -73,9 +73,11 @@ attribute name          | type      | default value    | purpose
 ----------------------- | --------- | ---------------- | --------------------------------------------------------------------
 `PANEL_HEADER_LAYER`    | global    | `tStop`          | layer to place header text on
 `PANEL_HEADER_OFFSET_X` | global    | `0.0`            | nudge panel header text left or right (millimetres)
+`PANEL_HEADER_OFFSET_Y` | global    | `0.0`            | nudge panel header text up or down (millimetres)
 `PANEL_HEADER_TEXT`     | global    | `<HEADER_TEXT>`  | text for header section of panel
 `PANEL_FOOTER_LAYER`    | global    | `tStop`          | layer to place footer text on
 `PANEL_FOOTER_OFFSET_X` | global    | `0.0`            | nudge panel footer text left or right (millimetres)
+`PANEL_FOOTER_OFFSET_Y` | global    | `0.0`            | nudge panel footer text up or down (millimetres)
 `PANEL_FOOTER_TEXT`     | global    | `<FOOTER_TEXT>`  | text for footer section of panel
 `PANEL_LEGEND_LAYER`    | global    | `tStop`          | layer to place panel legend text on
 `PANEL_LEGEND_SKIP_RE`  | global    | _none_           | [RE2](https://github.com/google/re2/wiki/Syntax) expression; if a component name matches, legend text is skipped
