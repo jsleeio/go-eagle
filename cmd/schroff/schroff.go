@@ -172,7 +172,7 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 		if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
 			plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
 		} else {
-			fmt.Printf("%s: skipping legend\n", elem.Name)
+			log.Printf("%s: skipping legend\n", elem.Name)
 		}
 		hsw, err := eagle.AttributeFloat(elem, "PANEL_HOLE_STOP_WIDTH", *plc.cfg.HoleStopRadius)
 		if err != nil {
