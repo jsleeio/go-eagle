@@ -24,11 +24,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jsleeio/go-eagle/pkg/eagle"
 	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
 	"github.com/jsleeio/go-eagle/pkg/format/intellijel"
 	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
+	filespec "github.com/jsleeio/go-eagle/pkg/format/spec"
 	"github.com/jsleeio/go-eagle/pkg/panel"
 
 	"github.com/jsleeio/go-eagle/internal/boardops/standard"
@@ -41,6 +43,8 @@ const (
 	FormatPulplogic = "pulplogic"
 	// FormatIntellijel is the Intellijel-defined 1U specification
 	FormatIntellijel = "intellijel"
+	// FormatSpec is the YAML-derived panel specification
+	FormatSpec = "spec"
 )
 
 type config struct {
@@ -49,15 +53,18 @@ type config struct {
 	Output       *string
 	RefBoard     *string
 	OutlineLayer *string
+	SpecFile     *string
 }
 
 func configureFromFlags() (*config, error) {
+	formatList := "(" + strings.Join([]string{FormatEurorack, FormatPulplogic, FormatIntellijel, FormatSpec}, ",") + ")"
 	c := &config{
 		Width:        flag.Int("width", 4, "width of the panel, in integer units appropriate for the format"),
-		Format:       flag.String("format", FormatEurorack, "panel format to create (eurorack, pulplogic, intellijel)"),
+		Format:       flag.String("format", FormatEurorack, "panel format to create "+formatList),
 		RefBoard:     flag.String("reference-board", "", "reference Eagle board file to read layer information from"),
 		Output:       flag.String("output", "newpanel.brd", "filename to write new Eagle board file to"),
 		OutlineLayer: flag.String("outline-layer", "Dimension", "layer to draw board outline in"),
+		SpecFile:     flag.String("spec-file", "", "filename to read YAML panel spec from"),
 	}
 	flag.Parse()
 	if *c.RefBoard == "" {
@@ -98,6 +105,12 @@ func main() {
 		spec = pulplogic.NewPulplogic(*cfg.Width)
 	case FormatIntellijel:
 		spec = intellijel.NewIntellijel(*cfg.Width)
+	case FormatSpec:
+		spec, err = filespec.LoadSpec(*cfg.SpecFile)
+		if err != nil {
+			fmt.Printf("error loading YAML panel spec from '%v': %v", *cfg.SpecFile, err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Printf("unsupported format: %s\n", *cfg.Format)
 		os.Exit(3)

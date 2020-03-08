@@ -36,16 +36,18 @@ $ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd 
 ## commandline options
 
 ```
-$ ./panelgen --help
+$ ./panelgen -help
 Usage of ./panelgen:
   -format string
-    	panel format to create (eurorack, pulplogic, intellijel) (default "eurorack")
+    	panel format to create (eurorack,pulplogic,intellijel,spec) (default "eurorack")
   -outline-layer string
     	layer to draw board outline in (default "Dimension")
   -output string
     	filename to write new Eagle board file to (default "newpanel.brd")
   -reference-board string
     	reference Eagle board file to read layer information from
+  -spec-file string
+    	filename to read YAML panel spec from
   -width int
     	width of the panel, in integer units appropriate for the format (default 4)
 ```
@@ -144,10 +146,32 @@ many earlier versions also!) but are _not_ accepted by
 is, but it's most likely *not* OSHPark's fault, so please *don't* complain to
 them if you try to use this. Just generate some Gerber files instead.
 
+# custom panel specifications
+
+These are now supported by `panelgen`, and are defined in YAML files that look
+like the below:
+
+    name: testEnclosure
+    width: 100.0
+    height: 75.0
+    horizontalFit: 0.0
+    mountingHoleDiameter: 3.1
+    mountingHoles:
+      - { x: 10, y: 10 }
+      - { x: 90, y: 10 }
+      - { x: 10, y: 65 }
+      - { x: 90, y: 65 }
+
+Usage:
+
+    $ ./panelgen -format=spec -spec-file=enclosures/spec-test.yaml \
+      -reference-board=data/ref.brd -output=test.brd
+
 # to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items (libraries!)
-* ability to define custom panel formats, eg. to fit a specific custom enclosure
+* extend custom panel spec support to increasingly terribly-named `schroff` tool
+* panel corner radius support, to better fit common box enclosures
 * BOM generation tool
 
 # copyright
