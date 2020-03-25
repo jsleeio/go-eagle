@@ -69,23 +69,32 @@ Components that need panel holes must have a `PANEL_DRILL_MM` attribute.
 
 ## list of global and component attributes
 
-attribute name          | type      | default value    | purpose
------------------------ | --------- | ---------------- | --------------------------------------------------------------------
-`PANEL_HEADER_LAYER`    | global    | `tStop`          | layer to place header text on
-`PANEL_HEADER_OFFSET_X` | global    | `0.0`            | nudge panel header text left or right (millimetres)
-`PANEL_HEADER_OFFSET_Y` | global    | `0.0`            | nudge panel header text up or down (millimetres)
-`PANEL_HEADER_TEXT`     | global    | `<HEADER_TEXT>`  | text for header section of panel
-`PANEL_FOOTER_LAYER`    | global    | `tStop`          | layer to place footer text on
-`PANEL_FOOTER_OFFSET_X` | global    | `0.0`            | nudge panel footer text left or right (millimetres)
-`PANEL_FOOTER_OFFSET_Y` | global    | `0.0`            | nudge panel footer text up or down (millimetres)
-`PANEL_FOOTER_TEXT`     | global    | `<FOOTER_TEXT>`  | text for footer section of panel
-`PANEL_LEGEND_LAYER`    | global    | `tStop`          | layer to place panel legend text on
-`PANEL_LEGEND_SKIP_RE`  | global    | _none_           | [RE2](https://github.com/google/re2/wiki/Syntax) expression; if a component name matches, legend text is skipped
-`PANEL_DRILL_MM`        | component | _none_           | panel drill size to create for a component. Required for drill holes.
-`PANEL_LEGEND`          | component | _component name_ | override panel legend text for a component
-`PANEL_LEGEND_OFFSET_X` | component | `0.0`            | nudge panel legend text left or right (millimetres)
-`PANEL_LEGEND_OFFSET_Y` | component | `0.0`            | nudge panel legend text up or down (millimetres)
-`PANEL_HOLE_STOP_WIDTH` | component | `2.0`            | override the width of the stop-mask ring around the component hole
+attribute name                    | type      | default value    | purpose
+--------------------------------- | --------- | ---------------- | --------------------------------------------------------------------
+`PANEL_HEADER_LAYER`              | global    | `tStop`          | layer to place header text on
+`PANEL_HEADER_OFFSET_X`           | global    | `0.0`            | nudge panel header text left or right (millimetres)
+`PANEL_HEADER_OFFSET_Y`           | global    | `0.0`            | nudge panel header text up or down (millimetres)
+`PANEL_HEADER_TEXT`               | global    | `<HEADER_TEXT>`  | text for header section of panel
+`PANEL_FOOTER_LAYER`              | global    | `tStop`          | layer to place footer text on
+`PANEL_FOOTER_OFFSET_X`           | global    | `0.0`            | nudge panel footer text left or right (millimetres)
+`PANEL_FOOTER_OFFSET_Y`           | global    | `0.0`            | nudge panel footer text up or down (millimetres)
+`PANEL_FOOTER_TEXT`               | global    | `<FOOTER_TEXT>`  | text for footer section of panel
+`PANEL_LEGEND_LAYER`              | global    | `tStop`          | layer to place panel legend text on
+`PANEL_LEGEND_SKIP_RE`            | global    | _none_           | [RE2](https://github.com/google/re2/wiki/Syntax) expression; if a component name matches, legend text is skipped
+`PANEL_DRILL_MM`                  | component | _none_           | panel drill size to create for a component. Required for drill holes.
+`PANEL_HOLE_STOP_WIDTH`           | component | `2.0`            | override the width of the stop-mask ring around the component hole
+`PANEL_LEGEND_LOCATION`           | component | `above`          | set to `below` to place the legend text `below` the component instead of `above`
+`PANEL_LEGEND_OFFSET_X`           | component | `0.0`            | nudge panel legend text left or right (millimetres)
+`PANEL_LEGEND_OFFSET_Y`           | component | `0.0`            | nudge panel legend text up or down (millimetres)
+`PANEL_LEGEND_TICKS`              | component | `no`             | set to `yes` to add tick marks around component hole, eg. for potentiometers
+`PANEL_LEGEND_TICKS_COUNT`        | component | `11`             | number of ticks to draw
+`PANEL_LEGEND_TICKS_END_ANGLE`    | component | `225.0`          | ending polar angle to which to draw ticks, in degrees. Zero degrees is at 9 o'clock
+`PANEL_LEGEND_TICKS_LENGTH`       | component | `2.0`            | length of ticks
+`PANEL_LEGEND_TICKS_LABELS`       | component | `no`             | set to `yes` to add text labels next to tick marks
+`PANEL_LEGEND_TICKS_LABELS_TEXTS` | component | _none_           | labels for tick marks, separated with `,`. Quantity must match `PANEL_LEGEND_TICKS_COUNT`
+`PANEL_LEGEND_TICKS_START_ANGLE`  | component | `-45.0`          | starting polar angle from which to draw ticks, in degrees. Zero degrees is at 9 o'clock
+`PANEL_LEGEND_TICKS_WIDTH`        | component | `0.5`            | width of ticks
+`PANEL_LEGEND`                    | component | _component name_ | override panel legend text for a component
 
 ## commandline options
 
