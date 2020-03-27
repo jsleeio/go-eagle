@@ -189,11 +189,12 @@ func elementConfigFromElement(elem eagle.Element) (elementConfig, error) {
 		return ec, err
 	}
 	// default values for start and end angles suit a typical single-turn potentiometer
-	// with a 270-degree rotation
-	if ec.ticksStartAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_START_ANGLE", -45.0); err != nil {
+	// with a 300-degree rotation, like Alpha 9mm vertical pots
+	// https://www.thonk.co.uk/documents/alpha/9mm/Alpha%209mm%20Vertical%20-%20Linear%20Taper%20B1K-B500K.pdf
+	if ec.ticksStartAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_START_ANGLE", -60.0); err != nil {
 		return ec, err
 	}
-	if ec.ticksEndAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_END_ANGLE", 225.0); err != nil {
+	if ec.ticksEndAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_END_ANGLE", 240.0); err != nil {
 		return ec, err
 	}
 	// everything should go up to (at least) 11
