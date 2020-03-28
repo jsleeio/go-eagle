@@ -121,3 +121,16 @@ func (i Intellijel) MountingHoleTopY() float64 {
 func (i Intellijel) MountingHoleBottomY() float64 {
 	return MountingHoleBottomY1U
 }
+
+// HeaderLocation returns the location of the header text. Intellijel 1U has
+// mounting rails so this is typically aligned with the top mounting screw
+
+func (i Intellijel) HeaderLocation() panel.Point {
+	return panel.Point{X: i.Width() / 2.0, Y: i.MountingHoleTopY()}
+}
+
+// FooterLocation returns the location of the footer text. Intellijel 1U has
+// mounting rails so this is typically aligned with the bottom mounting screw
+func (i Intellijel) FooterLocation() panel.Point {
+	return panel.Point{X: i.Width() / 2.0, Y: i.MountingHoleBottomY()}
+}

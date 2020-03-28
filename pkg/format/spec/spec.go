@@ -123,3 +123,15 @@ func (s Spec) MountingHoleTopY() float64 {
 func (s Spec) MountingHoleBottomY() float64 {
 	return s.SpecMountingHoles[len(s.SpecMountingHoles)-1].Y
 }
+
+// HeaderLocation returns the location of the header text. Spec panels
+// may not have mounting rails so this is entirely arbitrary
+func (s Spec) HeaderLocation() panel.Point {
+	return panel.Point{X: s.Width() / 2, Y: s.MountingHoleTopY()}
+}
+
+// FooterLocation returns the location of the footer text. Spec panels
+// may not have mounting rails so this is entirely arbitrary
+func (s Spec) FooterLocation() panel.Point {
+	return panel.Point{X: s.Width() / 2, Y: s.MountingHoleBottomY()}
+}
