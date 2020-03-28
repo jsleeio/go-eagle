@@ -125,3 +125,15 @@ func (e Eurorack) MountingHoleTopY() float64 {
 func (e Eurorack) MountingHoleBottomY() float64 {
 	return MountingHoleBottomY3U
 }
+
+// HeaderLocation returns the location of the header text. Eurorack has
+// mounting rails so this is typically aligned with the top mounting screw
+func (e Eurorack) HeaderLocation() panel.Point {
+	return panel.Point{X: e.Width() / 2, Y: e.MountingHoleTopY()}
+}
+
+// FooterLocation returns the location of the footer text. Eurorack has
+// mounting rails so this is typically aligned with the bottom mounting screw
+func (e Eurorack) FooterLocation() panel.Point {
+	return panel.Point{X: e.Width() / 2, Y: e.MountingHoleBottomY()}
+}

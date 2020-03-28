@@ -1,13 +1,22 @@
 # overview
 
-This repository contains code and tools for interacting with Autodesk Eagle files.
+This repository contains code and tools for interacting with Autodesk Eagle
+files, and particularly for creating Eagle board files that can be used to
+manufacture front panels for electronics. Originally this was intended for
+Eurorack synthesizer systems, but now also has crude support for custom
+enclosures, such as the ubiquitous plastic "jiffy boxes".
 
 At present, the below tools are included:
 
-* `panelgen`: create a new blank panel board file in Eurorack, Pulplogic 1U or
-  Intellijel 1U formats, at a specified width
-* `schroff`: derive a new Eurorack panel board file from the board file for
-  your circuit
+* `panelgen`: create a new blank panel board file
+* `schroff`: derive a new panel board file from the board file for your circuit
+
+The below panel formats are supported:
+
+* Eurorack 3U, per Doepfer spec
+* Pulplogic 1U, per Pulplogic spec
+* Intellijel 1U, per Intellijel spec
+* custom enclosure specs defined in a YAML file
 
 # installing
 
@@ -18,7 +27,6 @@ and `schroff` commands:
 brew tap jsleeio/apps
 brew install go-eagle
 ```
-
 
 # panelgen
 
@@ -139,8 +147,8 @@ them if you try to use this. Just generate some Gerber files instead.
 
 # custom panel specifications
 
-These are now supported by `panelgen`, and are defined in YAML files that look
-like the below:
+These are now supported by `panelgen` and `schroff`, and are defined in YAML
+files that look like the below:
 
     name: testEnclosure
     width: 100.0
@@ -153,17 +161,27 @@ like the below:
       - { x: 10, y: 65 }
       - { x: 90, y: 65 }
 
-Usage:
+Usage wth `panelgen`:
 
     $ ./panelgen -format=spec -spec-file=enclosures/spec-test.yaml \
       -reference-board=data/ref.brd -output=test.brd
 
+Usage with `schroff`:
+
+    $ ./schroff -format=spec -spec-file=enclosure.yaml test.brd
+
+This is extremely preliminary at presejt
+
 # to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items (libraries!)
-* extend custom panel spec support to increasingly terribly-named `schroff` tool
 * panel corner radius support, to better fit common box enclosures
 * BOM generation tool
+* custom panel format should support defining a list of keepouts in at least
+  rectangular and circular shapes
+* a tool to generate an Eagle library for a custom enclosure, including keepouts
+  and cutouts features inside the case, and a Dimension layer outline. This
+  would be useful for a layout quick-start on the PCB to go inside the enclosure
 
 # copyright
 
