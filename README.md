@@ -88,12 +88,12 @@ attribute name                    | type      | default value    | purpose
 `PANEL_LEGEND_OFFSET_Y`           | component | `0.0`            | nudge panel legend text up or down (millimetres)
 `PANEL_LEGEND_TICKS`              | component | `no`             | set to `yes` to add tick marks around component hole, eg. for potentiometers
 `PANEL_LEGEND_TICKS_COUNT`        | component | `11`             | number of ticks to draw
-`PANEL_LEGEND_TICKS_END_ANGLE`    | component | `225.0`          | ending polar angle to which to draw ticks, in degrees. Zero degrees is at 9 o'clock
-`PANEL_LEGEND_TICKS_LENGTH`       | component | `2.0`            | length of ticks
+`PANEL_LEGEND_TICKS_END_ANGLE`    | component | `240.0`          | ending polar angle to which to draw ticks, in degrees. Zero degrees is at 9 o'clock
+`PANEL_LEGEND_TICKS_LENGTH`       | component | `1.5`            | length of ticks
 `PANEL_LEGEND_TICKS_LABELS`       | component | `no`             | set to `yes` to add text labels next to tick marks
 `PANEL_LEGEND_TICKS_LABELS_TEXTS` | component | _none_           | labels for tick marks, separated with `,`. Quantity must match `PANEL_LEGEND_TICKS_COUNT`
-`PANEL_LEGEND_TICKS_START_ANGLE`  | component | `-45.0`          | starting polar angle from which to draw ticks, in degrees. Zero degrees is at 9 o'clock
-`PANEL_LEGEND_TICKS_WIDTH`        | component | `0.5`            | width of ticks
+`PANEL_LEGEND_TICKS_START_ANGLE`  | component | `-60.0`          | starting polar angle from which to draw ticks, in degrees. Zero degrees is at 9 o'clock
+`PANEL_LEGEND_TICKS_WIDTH`        | component | `0.25`           | width of ticks
 `PANEL_LEGEND`                    | component | _component name_ | override panel legend text for a component
 
 ## commandline options
