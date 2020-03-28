@@ -26,11 +26,13 @@ import (
 	"log"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/jsleeio/go-eagle/pkg/eagle"
 	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
 	"github.com/jsleeio/go-eagle/pkg/format/intellijel"
 	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
+	"github.com/jsleeio/go-eagle/pkg/geometry"
 	"github.com/jsleeio/go-eagle/pkg/panel"
 
 	"github.com/jsleeio/go-eagle/internal/boardops/standard"
@@ -140,52 +142,143 @@ func headerOp(plc panelLayoutContext) {
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, footer)
 }
 
+type elementConfig struct {
+	legendOffsetX, legendOffsetY   float64
+	legendLocationFactor           float64
+	legend                         string
+	ticks, ticksLabels             bool
+	ticksStartAngle, ticksEndAngle float64
+	ticksLength, ticksWidth        float64
+	ticksCount                     int
+	ticksLabelsTexts               []string
+}
+
+// extract all the per-element config into a nice structure. Later this should help
+// with refactoring the currently-ugly elementOp() into a bunch of separate operations
+func elementConfigFromElement(elem eagle.Element) (elementConfig, error) {
+	var err error
+	ec := elementConfig{
+		legend:           eagle.AttributeString(elem, "PANEL_LEGEND", elem.Name),
+		ticksLabelsTexts: strings.Split(eagle.AttributeString(elem, "PANEL_LEGEND_TICKS_LABELS_TEXTS", ""), ","),
+	}
+	if ec.legendOffsetX, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_X", 0.0); err != nil {
+		return ec, err
+	}
+	if ec.legendOffsetY, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_Y", 0.0); err != nil {
+		return ec, err
+	}
+	legendlocation := eagle.AttributeString(elem, "PANEL_LEGEND_LOCATION", "above")
+	switch legendlocation {
+	case "above":
+		ec.legendLocationFactor = 1
+	case "below":
+		ec.legendLocationFactor = -1
+	default:
+		return ec, fmt.Errorf("invalid value %q for attribute PANEL_LEGEND_LOCATION on object %q: must be 'above' or 'below'", legendlocation, elem.Name)
+	}
+	if ec.ticks, err = eagle.AttributeBool(elem, "PANEL_LEGEND_TICKS", false); err != nil {
+		return ec, err
+	}
+	if ec.ticksLabels, err = eagle.AttributeBool(elem, "PANEL_LEGEND_TICKS_LABELS", false); err != nil {
+		return ec, err
+	}
+	if ec.ticksLength, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_LENGTH", 1.5); err != nil {
+		return ec, err
+	}
+	if ec.ticksWidth, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_WIDTH", 0.25); err != nil {
+		return ec, err
+	}
+	// default values for start and end angles suit a typical single-turn potentiometer
+	// with a 300-degree rotation, like Alpha 9mm vertical pots
+	// https://www.thonk.co.uk/documents/alpha/9mm/Alpha%209mm%20Vertical%20-%20Linear%20Taper%20B1K-B500K.pdf
+	if ec.ticksStartAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_START_ANGLE", -60.0); err != nil {
+		return ec, err
+	}
+	if ec.ticksEndAngle, err = eagle.AttributeFloat(elem, "PANEL_LEGEND_TICKS_END_ANGLE", 240.0); err != nil {
+		return ec, err
+	}
+	// everything should go up to (at least) 11
+	if ec.ticksCount, err = eagle.AttributeInt(elem, "PANEL_LEGEND_TICKS_COUNT", 11); err != nil {
+		return ec, err
+	}
+	if ec.ticksLabels && len(ec.ticksLabelsTexts) != ec.ticksCount {
+		return ec, fmt.Errorf("incorrect number of tick labels provided for object %q: ticks = %v, labels = %v", elem.Name, ec.ticksCount, len(ec.ticksLabelsTexts))
+	}
+	log.Printf("element config for %s: %+v", elem.Name, ec)
+	return ec, nil
+}
+
 func elementOp(plc panelLayoutContext, elem eagle.Element) {
 	hole, needHole, err := holeForPanelElement(elem)
 	if err != nil {
 		log.Fatalf("can't find drill size for element %q: %v", elem.Name, err)
 	}
-	if needHole {
-		// the hole was generated with coordinates from the source board, now
-		// adjust them to be in the right place on the panel
-		tstop := plc.panel.LayerByName("tStop")
-		hole.X += plc.bc.XOffset
-		hole.Y += plc.bc.YOffset
-		aox, err := eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_X", 0.0)
-		if err != nil {
-			log.Fatal(err)
+	if !needHole {
+		return
+	}
+	// derive the per-element config
+	elementConfig, err := elementConfigFromElement(elem)
+	if err != nil {
+		log.Fatalf("error extracting per-element config from attributes: %v", err)
+	}
+	// the hole was generated with coordinates from the source board, now
+	// adjust them to be in the right place on the panel
+	tstop := plc.panel.LayerByName("tStop")
+	hole.X += plc.bc.XOffset
+	hole.Y += plc.bc.YOffset
+	plc.panel.Board.Plain.Holes = append(plc.panel.Board.Plain.Holes, hole)
+	text := eagle.Text{
+		X:     hole.X + elementConfig.legendOffsetX,
+		Y:     hole.Y + ((elementConfig.legendOffsetY + (hole.Drill / 2.0) + *plc.cfg.TextSpacing) * elementConfig.legendLocationFactor),
+		Size:  *plc.cfg.TextSize,
+		Layer: plc.panel.LayerByName(plc.legendLayer),
+		Text:  elementConfig.legend,
+		Align: "bottom-center",
+		Font:  "vector",
+	}
+	if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
+		plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
+	} else {
+		log.Printf("%s: skipping legend\n", elem.Name)
+	}
+	hsw, err := eagle.AttributeFloat(elem, "PANEL_HOLE_STOP_WIDTH", *plc.cfg.HoleStopRadius)
+	if err != nil {
+		log.Fatal(err)
+	}
+	stop := eagle.Circle{
+		X: hole.X, Y: hole.Y,
+		Radius: hole.Drill / 2.0,
+		Width:  hsw,
+		Layer:  tstop,
+	}
+	plc.panel.Board.Plain.Circles = append(plc.panel.Board.Plain.Circles, stop)
+	if elementConfig.ticks {
+		rpg := geometry.RadialPointGenerator{
+			X: hole.X, Y: hole.Y,
+			StartAngle: elementConfig.ticksStartAngle,
+			EndAngle:   elementConfig.ticksEndAngle,
+			Count:      elementConfig.ticksCount,
 		}
-		aoy, err := eagle.AttributeFloat(elem, "PANEL_LEGEND_OFFSET_Y", 0.0)
-		if err != nil {
-			log.Fatal(err)
+		tickstarts := rpg.GenerateAtRadius(hole.Drill/2.0 + *plc.cfg.HoleStopRadius)
+		tickends := rpg.GenerateAtRadius(hole.Drill/2.0 + *plc.cfg.HoleStopRadius + elementConfig.ticksLength)
+		textorigins := rpg.GenerateAtRadius(hole.Drill/2.0 + *plc.cfg.HoleStopRadius + elementConfig.ticksLength + 2.0)
+		for index, inner := range tickstarts {
+			plc.panel.Board.Plain.Wires = append(plc.panel.Board.Plain.Wires, eagle.Wire{
+				X1: inner.X, Y1: inner.Y,
+				X2: tickends[index].X, Y2: tickends[index].Y,
+				Width: elementConfig.ticksWidth,
+				Layer: tstop,
+			})
+			if elementConfig.ticksLabels {
+				plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, eagle.Text{
+					X: textorigins[index].X, Y: textorigins[index].Y,
+					Align: "center",
+					Size:  1.5,
+					Text:  strings.TrimSpace(elementConfig.ticksLabelsTexts[index]),
+					Layer: tstop,
+				})
+			}
 		}
-		plc.panel.Board.Plain.Holes = append(plc.panel.Board.Plain.Holes, hole)
-		text := eagle.Text{
-			X:     aox + hole.X,
-			Y:     aoy + hole.Y + (hole.Drill / 2.0) + *plc.cfg.TextSpacing,
-			Size:  *plc.cfg.TextSize,
-			Layer: plc.panel.LayerByName(plc.legendLayer),
-			Text:  eagle.AttributeString(elem, "PANEL_LEGEND", elem.Name),
-			Align: "bottom-center",
-			Font:  "vector",
-		}
-		if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
-			plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, text)
-		} else {
-			log.Printf("%s: skipping legend\n", elem.Name)
-		}
-		hsw, err := eagle.AttributeFloat(elem, "PANEL_HOLE_STOP_WIDTH", *plc.cfg.HoleStopRadius)
-		if err != nil {
-			log.Fatal(err)
-		}
-		stop := eagle.Circle{
-			X:      hole.X,
-			Y:      hole.Y,
-			Radius: hole.Drill / 2.0,
-			Width:  hsw,
-			Layer:  tstop,
-		}
-		plc.panel.Board.Plain.Circles = append(plc.panel.Board.Plain.Circles, stop)
 	}
 }
 

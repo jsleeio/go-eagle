@@ -23,6 +23,7 @@ package eagle
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // AttributeCarrier allows applying attribute operations to any objects that
@@ -32,7 +33,8 @@ type AttributeCarrier interface {
 }
 
 // AttributeString returns an attribute's string value, or if it isn't found,
-// a provided default value
+// a provided default value. Whitespace is not trimmed as that would hinder
+// supplying an attribute value of just whitespace (unlikely?)
 func AttributeString(c AttributeCarrier, name string, def string) string {
 	for _, attribute := range c.GetAttributes() {
 		if attribute.Name == name {
@@ -42,13 +44,39 @@ func AttributeString(c AttributeCarrier, name string, def string) string {
 	return def
 }
 
-// AttributeString returns an attribute's numeric value as a float64, or if
+// AttributeFloat returns an attribute's numeric value as a float64, or if
 // it isn't found, a provided default value.
 func AttributeFloat(c AttributeCarrier, name string, def float64) (float64, error) {
 	s := AttributeString(c, name, fmt.Sprint(def))
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0.0, fmt.Errorf("unparseable numeric attribute value for %s: %v", name, err)
+		return 0.0, fmt.Errorf("unparseable numeric floating-point attribute value for %s: %v", name, err)
 	}
 	return f, nil
+}
+
+// AttributeBool returns an attribute's value as a boolean value, or if
+// it isn't found, a provided default value. Valid values are "yes"/"true"
+// or "no"/"false". Case insensitive.
+func AttributeBool(c AttributeCarrier, name string, def bool) (bool, error) {
+	s := strings.ToLower(strings.TrimSpace(AttributeString(c, name, fmt.Sprint(def))))
+	switch {
+	case s == "yes" || s == "true":
+		return true, nil
+	case s == "no" || s == "false":
+		return false, nil
+	default:
+		return false, fmt.Errorf("unparseable boolean attribute value for %s: %q", name, s)
+	}
+}
+
+// AttributeInt returns an attribute's numeric value as an int, or if
+// it isn't found, a provided default value.
+func AttributeInt(c AttributeCarrier, name string, def int) (int, error) {
+	s := AttributeString(c, name, fmt.Sprint(def))
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("unparseable numeric integer attribute value for %s: %v", name, err)
+	}
+	return n, nil
 }
