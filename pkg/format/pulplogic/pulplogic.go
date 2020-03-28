@@ -130,3 +130,15 @@ func (p Pulplogic) MountingHoleTopY() float64 {
 func (p Pulplogic) MountingHoleBottomY() float64 {
 	return MountingHoleBottomY1U
 }
+
+// HeaderLocation returns the location of the header text. Pulplogic 1U has
+// mounting rails so this is typically aligned with the top mounting screw
+func (p Pulplogic) HeaderLocation() panel.Point {
+	return panel.Point{X: p.Width() / 2.0, Y: p.MountingHoleTopY()}
+}
+
+// FooterLocation returns the location of the footer text. Pulplogic 1U has
+// mounting rails so this is typically aligned with the bottom mounting screw
+func (p Pulplogic) FooterLocation() panel.Point {
+	return panel.Point{X: p.Width() / 2.0, Y: p.MountingHoleBottomY()}
+}

@@ -75,23 +75,30 @@ func mountingHolesOp(board *eagle.Eagle, spec panel.Panel) error {
 }
 
 func railKeepoutsOp(board *eagle.Eagle, spec panel.Panel) error {
-	layer := board.LayerByName("tKeepout")
-	bRail := eagle.Rectangle{
-		X1:    panel.LeftX(spec),
-		Y1:    spec.MountingHoleBottomY(),
-		X2:    panel.RightX(spec),
-		Y2:    spec.MountingHoleBottomY() + spec.RailHeightFromMountingHole(),
-		Layer: layer,
+	// format may not have rails.
+	// FIXME: find a better way to do this now that custom formats are
+	//        supported. Maybe add a new operation that creates keepouts
+	//        around panel holes to account for mounting hole posts in
+	//        typical off-the-shelf enclosures?
+	if railheight := spec.RailHeightFromMountingHole(); railheight > 0 {
+		layer := board.LayerByName("tKeepout")
+		bRail := eagle.Rectangle{
+			X1:    panel.LeftX(spec),
+			Y1:    spec.MountingHoleBottomY(),
+			X2:    panel.RightX(spec),
+			Y2:    spec.MountingHoleBottomY() + spec.RailHeightFromMountingHole(),
+			Layer: layer,
+		}
+		tRail := eagle.Rectangle{
+			X1:    panel.LeftX(spec),
+			Y1:    spec.MountingHoleTopY() - spec.RailHeightFromMountingHole(),
+			X2:    panel.RightX(spec),
+			Y2:    spec.MountingHoleTopY(),
+			Layer: layer,
+		}
+		board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, bRail)
+		board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, tRail)
 	}
-	tRail := eagle.Rectangle{
-		X1:    panel.LeftX(spec),
-		Y1:    spec.MountingHoleTopY() - spec.RailHeightFromMountingHole(),
-		X2:    panel.RightX(spec),
-		Y2:    spec.MountingHoleTopY(),
-		Layer: layer,
-	}
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, bRail)
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, tRail)
 	return nil
 }
 

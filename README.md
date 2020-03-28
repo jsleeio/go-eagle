@@ -1,13 +1,22 @@
 # overview
 
-This repository contains code and tools for interacting with Autodesk Eagle files.
+This repository contains code and tools for interacting with Autodesk Eagle
+files, and particularly for creating Eagle board files that can be used to
+manufacture front panels for electronics. Originally this was intended for
+Eurorack synthesizer systems, but now also has crude support for custom
+enclosures, such as the ubiquitous plastic "jiffy boxes".
 
 At present, the below tools are included:
 
-* `panelgen`: create a new blank panel board file in Eurorack, Pulplogic 1U or
-  Intellijel 1U formats, at a specified width
-* `schroff`: derive a new Eurorack panel board file from the board file for
-  your circuit
+* `panelgen`: create a new blank panel board file
+* `schroff`: derive a new panel board file from the board file for your circuit
+
+The below panel formats are supported:
+
+* Eurorack 3U, per Doepfer spec
+* Pulplogic 1U, per Pulplogic spec
+* Intellijel 1U, per Intellijel spec
+* custom enclosure specs defined in a YAML file
 
 # installing
 
@@ -18,7 +27,6 @@ and `schroff` commands:
 brew tap jsleeio/apps
 brew install go-eagle
 ```
-
 
 # panelgen
 
@@ -36,16 +44,18 @@ $ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd 
 ## commandline options
 
 ```
-$ ./panelgen --help
+$ ./panelgen -help
 Usage of ./panelgen:
   -format string
-    	panel format to create (eurorack, pulplogic, intellijel) (default "eurorack")
+    	panel format to create (eurorack,pulplogic,intellijel,spec) (default "eurorack")
   -outline-layer string
     	layer to draw board outline in (default "Dimension")
   -output string
     	filename to write new Eagle board file to (default "newpanel.brd")
   -reference-board string
     	reference Eagle board file to read layer information from
+  -spec-file string
+    	filename to read YAML panel spec from
   -width int
     	width of the panel, in integer units appropriate for the format (default 4)
 ```
@@ -144,11 +154,43 @@ many earlier versions also!) but are _not_ accepted by
 is, but it's most likely *not* OSHPark's fault, so please *don't* complain to
 them if you try to use this. Just generate some Gerber files instead.
 
+# custom panel specifications
+
+These are now supported by `panelgen` and `schroff`, and are defined in YAML
+files that look like the below:
+
+    name: testEnclosure
+    width: 100.0
+    height: 75.0
+    horizontalFit: 0.0
+    mountingHoleDiameter: 3.1
+    mountingHoles:
+      - { x: 10, y: 10 }
+      - { x: 90, y: 10 }
+      - { x: 10, y: 65 }
+      - { x: 90, y: 65 }
+
+Usage wth `panelgen`:
+
+    $ ./panelgen -format=spec -spec-file=enclosures/spec-test.yaml \
+      -reference-board=data/ref.brd -output=test.brd
+
+Usage with `schroff`:
+
+    $ ./schroff -format=spec -spec-file=enclosure.yaml test.brd
+
+This is extremely preliminary at presejt
+
 # to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items (libraries!)
-* ability to define custom panel formats, eg. to fit a specific custom enclosure
+* panel corner radius support, to better fit common box enclosures
 * BOM generation tool
+* custom panel format should support defining a list of keepouts in at least
+  rectangular and circular shapes
+* a tool to generate an Eagle library for a custom enclosure, including keepouts
+  and cutouts features inside the case, and a Dimension layer outline. This
+  would be useful for a layout quick-start on the PCB to go inside the enclosure
 
 # copyright
 

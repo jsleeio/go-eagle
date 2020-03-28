@@ -32,6 +32,7 @@ import (
 	"github.com/jsleeio/go-eagle/pkg/format/eurorack"
 	"github.com/jsleeio/go-eagle/pkg/format/intellijel"
 	"github.com/jsleeio/go-eagle/pkg/format/pulplogic"
+	filespec "github.com/jsleeio/go-eagle/pkg/format/spec"
 	"github.com/jsleeio/go-eagle/pkg/geometry"
 	"github.com/jsleeio/go-eagle/pkg/panel"
 
@@ -46,16 +47,19 @@ const (
 	FormatPulplogic = "pulplogic"
 	// FormatIntellijel is the Intellijel-defined 1U specification
 	FormatIntellijel = "intellijel"
+	// FormatSpec is the YAML-derived panel specification
+	FormatSpec = "spec"
 )
 
 // wrap up all of the context required for creating panel features
 // into one place to simplify and reduce error
 type panelLayoutContext struct {
-	bc    outline.BoardCoords
-	board *eagle.Eagle
-	panel *eagle.Eagle
-	cfg   config
-	spec  panel.Panel
+	format string
+	bc     outline.BoardCoords
+	board  *eagle.Eagle
+	panel  *eagle.Eagle
+	cfg    config
+	spec   panel.Panel
 	// legendSkipRe is pulled from the board global attribute PANEL_LEGEND_SKIP_RE.
 	// If a component name matches this regexp, it will NOT have a panel legend
 	// text object created.
@@ -63,6 +67,26 @@ type panelLayoutContext struct {
 	legendLayer  string
 	headerLayer  string
 	footerLayer  string
+}
+
+func (plc *panelLayoutContext) panelSpecForFormat() (err error) {
+	err = nil
+	switch *plc.cfg.Format {
+	case FormatEurorack:
+		plc.spec = eurorack.NewEurorack(plc.bc.HP)
+	case FormatPulplogic:
+		plc.spec = pulplogic.NewPulplogic(plc.bc.HP)
+	case FormatIntellijel:
+		plc.spec = intellijel.NewIntellijel(plc.bc.HP)
+	case FormatSpec:
+		plc.spec, err = filespec.LoadSpec(*plc.cfg.SpecFile)
+		if err != nil {
+			err = fmt.Errorf("error loading YAML panel spec from '%v': %v", *plc.cfg.SpecFile, err)
+		}
+	default:
+		err = fmt.Errorf("unsupported format: %s", *plc.cfg.Format)
+	}
+	return
 }
 
 func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, error) {
@@ -78,11 +102,10 @@ func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, 
 	if lsre := eagle.AttributeString(board.Board, "PANEL_LEGEND_SKIP_RE", ""); lsre != "" {
 		plc.legendSkipRe = regexp.MustCompile(lsre)
 	}
-	spec, err := panelSpecForFormat(plc.bc.HP, *plc.cfg.Format)
+	err := plc.panelSpecForFormat()
 	if err != nil {
 		return panelLayoutContext{}, err
 	}
-	plc.spec = spec
 	plc.panel = plc.board.CloneEmpty()
 	if err := standard.ApplyStandardBoardOperations(plc.panel, plc.spec); err != nil {
 		return panelLayoutContext{}, fmt.Errorf("error creating panel features: %v", err)
@@ -91,21 +114,6 @@ func setupPanelLayoutContext(board *eagle.Eagle, c config) (panelLayoutContext, 
 	plc.bc.XOffset += (plc.spec.Width()-plc.bc.Width())/2 + plc.spec.HorizontalFit()/2
 	plc.bc.YOffset += (plc.spec.Height() - plc.bc.Height()) / 2
 	return plc, nil
-}
-
-func panelSpecForFormat(width int, format string) (panel.Panel, error) {
-	var spec panel.Panel
-	switch format {
-	case FormatEurorack:
-		spec = eurorack.NewEurorack(width)
-	case FormatPulplogic:
-		spec = pulplogic.NewPulplogic(width)
-	case FormatIntellijel:
-		spec = intellijel.NewIntellijel(width)
-	default:
-		return nil, fmt.Errorf("unsupported format: %s", format)
-	}
-	return spec, nil
 }
 
 func headerOp(plc panelLayoutContext) {
@@ -122,18 +130,20 @@ func headerOp(plc panelLayoutContext) {
 		}
 	}
 	// add the header and footer
+	headerloc := plc.spec.HeaderLocation()
 	header := eagle.Text{
-		X:     plc.spec.Width()/2.0 + offsets["PANEL_HEADER_OFFSET_X"],
-		Y:     plc.spec.MountingHoleTopY() + offsets["PANEL_HEADER_OFFSET_Y"],
+		X:     headerloc.X + offsets["PANEL_HEADER_OFFSET_X"],
+		Y:     headerloc.Y + offsets["PANEL_HEADER_OFFSET_Y"],
 		Align: "center",
 		Size:  3.0,
 		Text:  eagle.AttributeString(plc.board.Board, "PANEL_HEADER_TEXT", "<HEADER>"),
 		Layer: plc.panel.LayerByName(plc.headerLayer),
 	}
+	footerloc := plc.spec.FooterLocation()
 	plc.panel.Board.Plain.Texts = append(plc.panel.Board.Plain.Texts, header)
 	footer := eagle.Text{
-		X:     plc.spec.Width()/2.0 + offsets["PANEL_FOOTER_OFFSET_X"],
-		Y:     plc.spec.MountingHoleBottomY() + offsets["PANEL_FOOTER_OFFSET_Y"],
+		X:     footerloc.X + offsets["PANEL_FOOTER_OFFSET_X"],
+		Y:     footerloc.Y + offsets["PANEL_FOOTER_OFFSET_Y"],
 		Align: "center",
 		Size:  3.0,
 		Text:  eagle.AttributeString(plc.board.Board, "PANEL_FOOTER_TEXT", "<FOOTER>"),
@@ -303,14 +313,17 @@ type config struct {
 	TextSpacing    *float64
 	TextSize       *float64
 	HoleStopRadius *float64
+	SpecFile       *string
 }
 
 func configureFromFlags() config {
+	formatList := "(" + strings.Join([]string{FormatEurorack, FormatPulplogic, FormatIntellijel, FormatSpec}, ",") + ")"
 	cfg := config{
-		Format:         flag.String("format", FormatEurorack, "panel format to create (eurorack, pulplogic, intellijel)"),
+		Format:         flag.String("format", FormatEurorack, "panel format to create "+formatList),
 		TextSpacing:    flag.Float64("text-spacing", 3.5, "spacing between a hole and its related label"),
 		TextSize:       flag.Float64("text-size", 2.25, "label text size"),
 		HoleStopRadius: flag.Float64("hole-stop-radius", 2.0, "Radius to pull back soldermask around a hole"),
+		SpecFile:       flag.String("spec-file", "", "filename to read YAML panel spec from"),
 	}
 	flag.Parse()
 	return cfg
@@ -323,7 +336,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("can't load input file %q: %v", filename, err)
 		}
-		// panel, bc := schroffPanelForBoard(board, config)
 		plc, err := setupPanelLayoutContext(board, config)
 		if err != nil {
 			log.Fatalf("can't setup panel layout context: %v", err)

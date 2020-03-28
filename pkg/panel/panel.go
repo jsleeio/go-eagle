@@ -72,6 +72,12 @@ type Panel interface {
 	// MountingHoleBottomY returns the Y coordinate for the bottom row of
 	// mounting holes
 	MountingHoleBottomY() float64
+
+	// HeaderLocation returns the location of the header text
+	HeaderLocation() Point
+
+	// FooterLocation returns the location of the footer text
+	FooterLocation() Point
 }
 
 func LeftX(spec Panel) float64 {
