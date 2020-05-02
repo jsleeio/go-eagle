@@ -155,6 +155,7 @@ func headerOp(plc panelLayoutContext) {
 type elementConfig struct {
 	legendOffsetX, legendOffsetY   float64
 	legendLocationFactor           float64
+	legendAlign                    string
 	legend                         string
 	ticks, ticksLabels             bool
 	ticksStartAngle, ticksEndAngle float64
@@ -181,8 +182,10 @@ func elementConfigFromElement(elem eagle.Element) (elementConfig, error) {
 	switch legendlocation {
 	case "above":
 		ec.legendLocationFactor = 1
+		ec.legendAlign = "bottom-center"
 	case "below":
 		ec.legendLocationFactor = -1
+		ec.legendAlign = "top-center"
 	default:
 		return ec, fmt.Errorf("invalid value %q for attribute PANEL_LEGEND_LOCATION on object %q: must be 'above' or 'below'", legendlocation, elem.Name)
 	}
@@ -243,7 +246,7 @@ func elementOp(plc panelLayoutContext, elem eagle.Element) {
 		Size:  *plc.cfg.TextSize,
 		Layer: plc.panel.LayerByName(plc.legendLayer),
 		Text:  elementConfig.legend,
-		Align: "bottom-center",
+		Align: elementConfig.legendAlign,
 		Font:  "vector",
 	}
 	if text.Text != "" && (plc.legendSkipRe == nil || !plc.legendSkipRe.MatchString(elem.Name)) {
