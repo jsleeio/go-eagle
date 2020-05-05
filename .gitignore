@@ -1,5 +1,12 @@
-/schroff
+# current binaries
 /panelgen
+/go-eagle
+
+# in case someone has this lying around in a repo still
+/schroff
+
+# goreleaser
+/dist
 
 # Eagle .brd board files and .b## backup files
 *.b*

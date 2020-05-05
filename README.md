@@ -9,7 +9,7 @@ enclosures, such as the ubiquitous plastic "jiffy boxes".
 At present, the below tools are included:
 
 * `panelgen`: create a new blank panel board file
-* `schroff`: derive a new panel board file from the board file for your circuit
+* `go-eagle`: derive a new panel board file from the board file for your circuit
 
 The below panel formats are supported:
 
@@ -18,54 +18,27 @@ The below panel formats are supported:
 * Intellijel 1U, per Intellijel spec
 * custom enclosure specs defined in a YAML file
 
-# installing
+# installing (releases)
 
-On a Mac with Homebrew, you can use my Homebrew tap to install the `panelgen`
-and `schroff` commands:
+Grab one of the prebuilt binaries from the release page if there is one for
+your operating platform. If not...
 
-```
-brew tap jsleeio/apps
-brew install go-eagle
-```
+# installing (source)
 
-# panelgen
-
-`panelgen` is used for creating new, blank panels in Eurorack, Pulplogic 1U or
-Intellijel 1U formats. An existing Eagle board file is required in order to
-derive the desired set of Eagle layer information. This can be any Eagle board
-file.
-
-Demonstration usage, creating a 6hp Pulplogic tile:
+Firstly, install a Golang toolchain and `git`. Then...
 
 ```
-$ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd -width=6
+$ git clone git@github.com:jsleeio/go-eagle.git
+$ go build
+$ go build ./cmd/panelgen
 ```
 
-## commandline options
+# go-eagle (formerly named 'schroff')
 
-```
-$ ./panelgen -help
-Usage of ./panelgen:
-  -format string
-    	panel format to create (eurorack,pulplogic,intellijel,spec) (default "eurorack")
-  -outline-layer string
-    	layer to draw board outline in (default "Dimension")
-  -output string
-    	filename to write new Eagle board file to (default "newpanel.brd")
-  -reference-board string
-    	reference Eagle board file to read layer information from
-  -spec-file string
-    	filename to read YAML panel spec from
-  -width int
-    	width of the panel, in integer units appropriate for the format (default 4)
-```
-
-# schroff
-
-`schroff` is used for deriving
+`go-eagle` is used for deriving
 [Eurorack module front panels](http://www.doepfer.de/a100_man/a100m_e.htm)
 from the Eagle board file for the module's actual circuitry. That is, you
-design your module's circuit board in Eagle, and then `schroff` examines the
+design your module's circuit board in Eagle, and then `go-eagle` examines the
 board file to discover:
 
 * which circuit components (potentiometers, jacks, LEDs, etc) require panel drill holes
@@ -109,8 +82,8 @@ attribute name                    | type      | default value    | purpose
 ## commandline options
 
 ```
-$ ./schroff --help
-Usage of ./schroff:
+$ ./go-eagle --help
+Usage of ./go-eagle:
   -format string
     	panel format to create (eurorack, pulplogic, intellijel) (default "eurorack")
   -hole-stop-radius float
@@ -126,7 +99,7 @@ Usage of ./schroff:
 To generate a panel board file:
 
 ```
-$ schroff morphlag-rev2.brd
+$ go-eagle morphlag-rev2.brd
 2019/06/02 17:48:17 FALL: found PANEL_DRILL_MM attribute with value 7
 2019/06/02 17:48:17 IN: found PANEL_DRILL_MM attribute with value 6
 2019/06/02 17:48:17 OUT: found PANEL_DRILL_MM attribute with value 6
@@ -146,7 +119,7 @@ $ ls -l wavolver2-rev1.brd.panel.brd
 -rw-r--r--  1 jslee  staff  17912 28 Apr 17:02 wavolver2-rev1.brd.panel.brd
 ```
 
-# compatibility
+## compatibility
 
 At present the generated board files load just fine in Eagle 9.3.2+ (probably
 many earlier versions also!) but are _not_ accepted by
@@ -154,9 +127,9 @@ many earlier versions also!) but are _not_ accepted by
 is, but it's most likely *not* OSHPark's fault, so please *don't* complain to
 them if you try to use this. Just generate some Gerber files instead.
 
-# custom panel specifications
+## custom panel specifications
 
-These are now supported by `panelgen` and `schroff`, and are defined in YAML
+These are now supported by `panelgen` and `go-eagle`, and are defined in YAML
 files that look like the below:
 
     name: testEnclosure
@@ -175,11 +148,44 @@ Usage wth `panelgen`:
     $ ./panelgen -format=spec -spec-file=enclosures/spec-test.yaml \
       -reference-board=data/ref.brd -output=test.brd
 
-Usage with `schroff`:
+Usage with `go-eagle`:
 
-    $ ./schroff -format=spec -spec-file=enclosure.yaml test.brd
+    $ ./go-eagle -format=spec -spec-file=enclosure.yaml test.brd
 
 This is extremely preliminary at presejt
+
+# panelgen
+
+`panelgen` is used for creating new, blank panels in Eurorack, Pulplogic 1U or
+Intellijel 1U formats. An existing Eagle board file is required in order to
+derive the desired set of Eagle layer information. This can be any Eagle board
+file.
+
+Demonstration usage, creating a 6hp Pulplogic tile:
+
+```
+$ ./panelgen -format=pulplogic -reference-board=data/ref.brd -output=mytile.brd -width=6
+```
+
+## commandline options
+
+```
+$ ./panelgen -help
+Usage of ./panelgen:
+  -format string
+    	panel format to create (eurorack,pulplogic,intellijel,spec) (default "eurorack")
+  -outline-layer string
+    	layer to draw board outline in (default "Dimension")
+  -output string
+    	filename to write new Eagle board file to (default "newpanel.brd")
+  -reference-board string
+    	reference Eagle board file to read layer information from
+  -spec-file string
+    	filename to read YAML panel spec from
+  -width int
+    	width of the panel, in integer units appropriate for the format (default 4)
+```
+
 
 # to-do
 
@@ -194,7 +200,7 @@ This is extremely preliminary at presejt
 
 # copyright
 
-Copyright 2019 John Slee <jslee@jslee.io>.
+Copyright 2020 John Slee <jslee@jslee.io>.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
