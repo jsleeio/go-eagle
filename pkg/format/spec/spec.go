@@ -39,6 +39,7 @@ type Spec struct {
 	SpecMountingHoles        []panel.Point `yaml:"mountingHoles"`
 	SpecMountingHoleDiameter float64       `yaml:"mountingHoleDiameter"`
 	SpecHorizontalFit        float64       `yaml:"horizontalFit"`
+	SpecCornerRadius         float64       `yaml:"cornerRadius"`
 }
 
 type PanelSpecError struct {
@@ -97,6 +98,12 @@ func (s Spec) MountingHoles() []panel.Point {
 // HorizontalFit indicates the panel tolerance adjustment for the format
 func (s Spec) HorizontalFit() float64 {
 	return s.SpecHorizontalFit
+}
+
+// HorizontalFit indicates the corner radius for the format, as would be
+// useful for snugly fitting jiffyboxes. Default is no radius.
+func (s Spec) CornerRadius() float64 {
+	return s.SpecCornerRadius
 }
 
 // RailHeightFromMountingHole doesn't really directly apply to YAML-spec

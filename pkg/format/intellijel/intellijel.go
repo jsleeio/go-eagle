@@ -54,6 +54,10 @@ const (
 	// HorizontalFit indicates the panel tolerance adjustment for the format
 	HorizontalFit = 0.25
 
+	// CornerRadius indicates the corner radius for the format. Eurorack doesn't
+	// believe in such things.
+	CornerRadius = 0.0
+
 	// RailHeightFromMountingHole is used to determine how much space exists.
 	// See discussion in github.com/jsleeio/pkg/panel. 5mm is a good safe
 	// figure for all known-used Eurorack rail types
@@ -103,6 +107,11 @@ func (i Intellijel) MountingHoles() []panel.Point {
 // HorizontalFit indicates the panel tolerance adjustment for the format
 func (i Intellijel) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// CornerRadius indicates the corner radius for the format
+func (i Intellijel) CornerRadius() float64 {
+	return CornerRadius
 }
 
 // RailHeightFromMountingHole is used to calculate space between rails
