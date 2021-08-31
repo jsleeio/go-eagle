@@ -56,6 +56,7 @@ func outlineWiresOp(board *eagle.Eagle, spec panel.Panel) error {
 		spec.Height(),
 		board.LayerByName("Dimension"),
 		0, // outline wires must be zero-width
+		spec.CornerRadius(),
 	)
 	for _, wire := range outline {
 		board.Board.Plain.Wires = append(board.Board.Plain.Wires, wire)
@@ -107,21 +108,41 @@ func copperFillOp(board *eagle.Eagle, spec panel.Panel) error {
 	// panel outline, but if we don't include it here, the pullback will be
 	// wrong, or possibly even completely ineffective. So, include it.
 	adjust := spec.HorizontalFit() / 2
-	top := eagle.Rectangle{
-		X1:    CopperPullback + adjust,
-		Y1:    CopperPullback,
-		X2:    spec.Width() - (CopperPullback + adjust),
-		Y2:    spec.Height() - CopperPullback,
-		Layer: board.LayerByName("Top"),
+	x1 := CopperPullback + adjust
+	y1 := CopperPullback
+	x2 := spec.Width() - (CopperPullback + adjust)
+	y2 := spec.Height() - CopperPullback
+	r := spec.CornerRadius()
+	vertices := []eagle.Vertex{}
+	if r < 0.01 { // effectively zero {
+		vertices = append(vertices,
+			eagle.Vertex{X: x1, Y: y1}, // bottom left,
+			eagle.Vertex{X: x1, Y: y2}, // top left,
+			eagle.Vertex{X: x2, Y: y2}, // top right,
+			eagle.Vertex{X: x2, Y: y1}) // bottom right
+	} else {
+		vertices = append(vertices,
+			eagle.Vertex{X: x1 + r, Y: y1, Curve: -90.0}, // bottom left corner radius start
+			eagle.Vertex{X: x1, Y: y1 + r},               // bottom left corner radius end
+			eagle.Vertex{X: x1, Y: y2 - r, Curve: -90.0}, // left edge edge end
+			eagle.Vertex{X: x1 + r, Y: y2},               // top left corner radius end
+			eagle.Vertex{X: x2 - r, Y: y2, Curve: -90.0}, // top edge end
+			eagle.Vertex{X: x2, Y: y2 - r},               // top right corner radius end
+			eagle.Vertex{X: x2, Y: y1 + r, Curve: -90.0}, // right edge end
+			eagle.Vertex{X: x2 - r, Y: y1},               // bottom right corner radius end
+			eagle.Vertex{X: x1 + r, Y: y1})               // bottom edge end
 	}
-	bottom := eagle.Rectangle{
-		X1:    CopperPullback + adjust,
-		Y1:    CopperPullback,
-		X2:    spec.Width() - (CopperPullback + adjust),
-		Y2:    spec.Height() - CopperPullback,
-		Layer: board.LayerByName("Bottom"),
+	top := eagle.Polygon{
+		Vertices: []eagle.Vertex{},
+		Layer:    board.LayerByName("Top"),
 	}
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, top)
-	board.Board.Plain.Rectangles = append(board.Board.Plain.Rectangles, bottom)
+	top.Vertices = append(top.Vertices, vertices...) // copy to avoid later pass-by-reference traps
+	bottom := eagle.Polygon{
+		Vertices: []eagle.Vertex{},
+		Layer:    board.LayerByName("Bottom"),
+	}
+	bottom.Vertices = append(bottom.Vertices, vertices...) // copy to avoid later pass-by-reference traps
+	board.Board.Plain.Polygons = append(board.Board.Plain.Polygons, top)
+	board.Board.Plain.Polygons = append(board.Board.Plain.Polygons, bottom)
 	return nil
 }
