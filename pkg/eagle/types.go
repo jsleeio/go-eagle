@@ -53,7 +53,7 @@ type Wire struct {
 	Layer int     `xml:"layer,attr"`
 	Style string  `xml:"style,attr,omitempty"`
 	Cap   string  `xml:"cap,attr,omitempty"`
-	Curve string  `xml:"curve,attr,omitempty"`
+	Curve float64 `xml:"curve,attr,omitempty"`
 }
 
 // Rectangle object
