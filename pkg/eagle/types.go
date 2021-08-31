@@ -68,8 +68,9 @@ type Rectangle struct {
 
 // Vertex object, used only in Polygon
 type Vertex struct {
-	X float64 `xml:"x,attr"`
-	Y float64 `xml:"y,attr"`
+	X     float64 `xml:"x,attr"`
+	Y     float64 `xml:"y,attr"`
+	Curve float64 `xml:"curve,attr,omitempty"`
 }
 
 // Polygon object
