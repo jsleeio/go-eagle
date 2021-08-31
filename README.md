@@ -136,6 +136,7 @@ files that look like the below:
     width: 100.0
     height: 75.0
     horizontalFit: 0.0
+    cornerRadius: 0.0
     mountingHoleDiameter: 3.1
     mountingHoles:
       - { x: 10, y: 10 }
@@ -152,7 +153,7 @@ Usage with `go-eagle`:
 
     $ ./go-eagle -format=spec -spec-file=enclosure.yaml test.brd
 
-This is extremely preliminary at presejt
+This is extremely preliminary at present.
 
 # panelgen
 
@@ -190,7 +191,6 @@ Usage of ./panelgen:
 # to-do
 
 * exhaustively scan the Eagle DTD and add the various missing items (libraries!)
-* panel corner radius support, to better fit common box enclosures
 * BOM generation tool
 * custom panel format should support defining a list of keepouts in at least
   rectangular and circular shapes
@@ -200,7 +200,7 @@ Usage of ./panelgen:
 
 # copyright
 
-Copyright 2020 John Slee <jslee@jslee.io>.
+Copyright 2021 John Slee <jslee@jslee.io>.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
