@@ -17,7 +17,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
-
 package eurorack
 
 import (
@@ -55,6 +54,10 @@ const (
 
 	// HorizontalFit indicates the panel tolerance adjustment for the format
 	HorizontalFit = 0.25
+
+	// CornerRadius indicates the corner radius for the format. Eurorack doesn't
+	// believe in such things.
+	CornerRadius = 0.0
 
 	// RailHeightFromMountingHole is used to determine how much space exists.
 	// See discussion in github.com/jsleeio/pkg/panel. 5mm is a good safe
@@ -107,6 +110,11 @@ func (e Eurorack) MountingHoles() []panel.Point {
 // HorizontalFit indicates the panel tolerance adjustment for the format
 func (e Eurorack) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// CornerRadius indicates the corner radius for the format
+func (e Eurorack) CornerRadius() float64 {
+	return CornerRadius
 }
 
 // RailHeightFromMountingHole is used to calculate space between rails

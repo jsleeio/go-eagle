@@ -54,6 +54,11 @@ type Panel interface {
 	// of the panel. (and especially not the mounting holes!)
 	HorizontalFit() float64
 
+	// CornerRadius returns the radius of the panel corners, if applicable. A
+	// zero value will result in no corner segments being generated, and so the
+	// board outline will consist of four straight lines.
+	CornerRadius() float64
+
 	// RailHeightFromMountingHole indicates how far up (from centre of bottom
 	// mounting hole) or down (from centre of top mounting hole) the mounting
 	// rail extends. This can be used to define KeepOut areas on the panel

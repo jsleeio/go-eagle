@@ -53,7 +53,7 @@ type Wire struct {
 	Layer int     `xml:"layer,attr"`
 	Style string  `xml:"style,attr,omitempty"`
 	Cap   string  `xml:"cap,attr,omitempty"`
-	Curve string  `xml:"curve,attr,omitempty"`
+	Curve float64 `xml:"curve,attr,omitempty"`
 }
 
 // Rectangle object
@@ -68,13 +68,14 @@ type Rectangle struct {
 
 // Vertex object, used only in Polygon
 type Vertex struct {
-	X float64 `xml:"x,attr"`
-	Y float64 `xml:"y,attr"`
+	X     float64 `xml:"x,attr"`
+	Y     float64 `xml:"y,attr"`
+	Curve float64 `xml:"curve,attr,omitempty"`
 }
 
 // Polygon object
 type Polygon struct {
-	Vertices []Vertex `xml:"vertices>vertex"`
+	Vertices []Vertex `xml:"vertex"`
 	Isolate  string   `xml:"isolate,omitempty"`
 	Pour     string   `xml:"pour,omitempty"`
 	Orphans  string   `xml:"orphans,omitempty"`

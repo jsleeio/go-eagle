@@ -60,6 +60,10 @@ const (
 	// HorizontalFit indicates the panel tolerance adjustment for the format
 	HorizontalFit = eurorack.HorizontalFit
 
+	// CornerRadius indicates the corner radius for the format. Eurorack doesn't
+	// believe in such things.
+	CornerRadius = 0.0
+
 	// RailHeightFromMountingHole is used to determine how much space exists.
 	// See discussion in github.com/jsleeio/pkg/panel.
 	//
@@ -112,6 +116,11 @@ func (p Pulplogic) MountingHoles() []panel.Point {
 // HorizontalFit indicates the panel tolerance adjustment for the format
 func (p Pulplogic) HorizontalFit() float64 {
 	return HorizontalFit
+}
+
+// CornerRadius indicates the corner radius for the format
+func (p Pulplogic) CornerRadius() float64 {
+	return CornerRadius
 }
 
 // RailHeightFromMountingHole is used to calculate space between rails
