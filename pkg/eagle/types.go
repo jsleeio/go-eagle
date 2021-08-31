@@ -75,7 +75,7 @@ type Vertex struct {
 
 // Polygon object
 type Polygon struct {
-	Vertices []Vertex `xml:"vertices>vertex"`
+	Vertices []Vertex `xml:"vertex"`
 	Isolate  string   `xml:"isolate,omitempty"`
 	Pour     string   `xml:"pour,omitempty"`
 	Orphans  string   `xml:"orphans,omitempty"`
